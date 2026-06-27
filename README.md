@@ -1,14 +1,10 @@
 # PitchPilot
 
-**A realtime voice judge that interrupts weak hackathon pitches before the real judges do.**
+A realtime voice judge that interrupts weak hackathon pitches before the real judges do.
 
-PitchPilot listens to your pitch over voice, **barges in** the moment it hears a weakness
-(no clear problem, weak "why voice", no demo, no benchmark, jargon-dumping), and on the cue
-**"score me"** delivers a scorecard based on the hackathon rubric.
+You pitch out loud. PitchPilot listens, and the moment it hears a weak spot (no clear problem, a thin "why voice", no demo, no benchmark, too much jargon) it cuts in. Say "score me" and it hands back a scorecard against the hackathon rubric.
 
-Built for the **LiveKit + Telli** hackathon. Rubric: Idea 50% / Execution 50%.
-
----
+Built for the LiveKit + Telli hackathon. The rubric is Idea 50%, Execution 50%.
 
 ## Architecture
 
@@ -17,34 +13,27 @@ Built for the **LiveKit + Telli** hackathon. Rubric: Idea 50% / Execution 50%.
 │  Browser    │ ──────────► │ LiveKit Room │ ◄───────── │  Python Agent          │
 │ (TanStack   │             │ (LiveKit     │            │  PitchPilot persona    │
 │  Start)     │ ◄── data ── │  Cloud)      │            │  openai.realtime       │
-│  Scorecard  │  (V1)       └──────────────┘            │  (gpt-realtime)        │
+│  Scorecard  │             └──────────────┘            │  (gpt-realtime)        │
 └─────────────┘                                          └────────────────────────┘
 ```
 
-- **`agent/`** — Python [LiveKit Agents](https://docs.livekit.io/agents/) worker running the
-  OpenAI realtime model with a "tough judge" persona. Speaks the scorecard aloud (V0) and
-  publishes it as JSON over the data channel (V1).
-- **`web/`** — TanStack Start (React + TS, run with Bun) frontend. Mints a LiveKit token from a
-  server route and connects the browser mic to the room. Renders the live scorecard (V1).
-- **`agent/scoring.py`** — a pure `score_pitch(transcript)` function (gpt-4o-mini → strict JSON).
-  The offline benchmark: a bad pitch scores below a good one (`agent/test_scoring.py`).
+The agent in `agent/` is a Python [LiveKit Agents](https://docs.livekit.io/agents/) worker. It runs the OpenAI realtime model with a tough-judge persona, speaks the scorecard out loud, and also publishes it as JSON over the data channel.
 
-The worker has **no `agent_name`**, so LiveKit Cloud auto-dispatches it into every new room.
-Both sides share the room named `judgemode`.
+The frontend in `web/` is a TanStack Start app (React and TypeScript, run with Bun). It mints a LiveKit token from a server route, connects your mic to the room, and draws the scorecard.
 
----
+`agent/scoring.py` holds one plain function, `score_pitch(transcript)`. It calls gpt-4o-mini and returns strict JSON. It also doubles as the benchmark: a bad pitch has to score below a good one, and `agent/test_scoring.py` checks that.
 
-## Prerequisites
+The worker sets no `agent_name`, so LiveKit Cloud sends it into every new room. Both sides meet in a room called `judgemode`.
 
-- **LiveKit Cloud** project → `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
-- **OpenAI** API key → `OPENAI_API_KEY`
-- **Python 3.12+** and **Bun 1.3+**
+## What you need
 
----
+A LiveKit Cloud project, which gives you `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET`. An OpenAI API key for `OPENAI_API_KEY`. Python 3.12 or newer, and Bun 1.3 or newer.
 
-## Run it (two processes)
+## Running it
 
-### 1. Agent worker
+PitchPilot runs as two processes.
+
+Start the agent worker:
 
 ```bash
 cd agent
@@ -54,37 +43,36 @@ cp .env.example .env        # then fill in LIVEKIT_* and OPENAI_API_KEY
 python main.py dev
 ```
 
-### 2. Frontend
+Wait for `registered worker` in the logs. That line means the LiveKit credentials work.
+
+Then start the frontend:
 
 ```bash
 cd web
 bun install
-# create web/.env with the SAME LiveKit values (no OPENAI key needed here):
+# create web/.env with the SAME LiveKit values (no OpenAI key needed here):
 #   LIVEKIT_URL=wss://YOUR-PROJECT.livekit.cloud
 #   LIVEKIT_API_KEY=...
 #   LIVEKIT_API_SECRET=...
 bun run dev
 ```
 
-Open the printed URL (defaults to http://localhost:3000), click **Start pitching**, allow the
-mic, and pitch. Pause after a weak sentence — the judge cuts in. Say **"score me"** to get scored.
+Open the printed URL, usually http://localhost:3000. Click Start pitching and allow the mic. The agent has to be running too, or no judge joins the room.
 
----
+## Benchmark
 
-## Benchmark (offline, no voice)
+This runs without a microphone and proves a bad pitch scores below a good one:
 
 ```bash
 cd agent && source .venv/bin/activate
 OPENAI_API_KEY=sk-... python -m pytest test_scoring.py -v
 ```
 
-Scores two fixture transcripts (a bad pitch and a good one) and asserts the good one wins.
-This is PitchPilot's eval artifact — teams can check whether a pitch revision actually improved.
-
----
+You should see two passing tests. Without the key they skip.
 
 ## Docs
 
-- Design spec: [`docs/superpowers/specs/2026-06-27-judgemode-design.md`](docs/superpowers/specs/2026-06-27-judgemode-design.md)
-- Implementation plan: [`docs/superpowers/plans/2026-06-27-judgemode.md`](docs/superpowers/plans/2026-06-27-judgemode.md)
-- Progress / next steps: [`docs/todo.md`](docs/todo.md)
+- Design notes: [`docs/superpowers/specs/2026-06-27-judgemode-design.md`](docs/superpowers/specs/2026-06-27-judgemode-design.md)
+- Build plan: [`docs/superpowers/plans/2026-06-27-judgemode.md`](docs/superpowers/plans/2026-06-27-judgemode.md)
+- How to run and what breaks: [`docs/usage.md`](docs/usage.md)
+- What is done and what is left: [`docs/todo.md`](docs/todo.md)
