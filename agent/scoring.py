@@ -1,7 +1,26 @@
+import logging
 from typing import Annotated
 
 from openai import OpenAI
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger("scoring")
+
+# One model for both the scorer and the feedback writer, so they never drift apart.
+# Feedback is best-effort, so dropping this to "gpt-4o-mini" for lower latency is fine.
+SCORER_MODEL = "gpt-4o"
+
+# Reuse one client across calls instead of re-instantiating per score_pitch().
+# Lazy so importing this module never requires OPENAI_API_KEY (the benchmark test
+# and the fallback path both rely on import-without-key working).
+_client: OpenAI | None = None
+
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI()
+    return _client
 
 RUBRIC_PROMPT = """\
 You are a tough but fair hackathon judge scoring a pitch transcript against the OFFICIAL rubric.
@@ -56,11 +75,11 @@ class Scorecard(BaseModel):
         return {**self.model_dump(), "total": self.total}
 
 
-def score_pitch(transcript: str, model: str = "gpt-4o") -> Scorecard:
+def score_pitch(transcript: str, model: str = SCORER_MODEL) -> Scorecard:
     """Single source of truth for the scorecard. Structured outputs guarantee the shape, so
     there is no hand-rolled normalization — only a defensive fallback if the API is down."""
     try:
-        resp = OpenAI().chat.completions.parse(
+        resp = _get_client().chat.completions.parse(
             model=model,
             temperature=0,
             response_format=Scorecard,
@@ -73,7 +92,7 @@ def score_pitch(transcript: str, model: str = "gpt-4o") -> Scorecard:
         if parsed is not None:
             return parsed
     except Exception:
-        pass
+        logger.warning("score_pitch failed; returning not-scored fallback", exc_info=True)
     return Scorecard(
         idea=0,
         execution=0,
