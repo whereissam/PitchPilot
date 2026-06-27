@@ -20,6 +20,7 @@
     --ink-soft: #5560E5;   /* lighter cobalt for secondary marks */
     --grid:     rgba(31, 43, 224, 0.10);  /* very faint blue grid */
     --rule:     #1F2BE0;
+    --accent:   #FF5A1F;   /* PitchPilot orange — used sparingly for the "cut" */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; background: #0a0a0a; }
@@ -113,6 +114,9 @@
   }
   .qr-block .px { background: var(--paper); }
   .qr-block .px.on { background: var(--ink); }
+  /* Real (scannable) QR variant — frames an SVG instead of the pixel grid */
+  .qr-block.real { display: block; padding: 6px; }
+  .qr-block.real img { display: block; width: 100%; height: 100%; }
 
   /* ══════════════════════════════════════════════════════════════
      SLIDE 1 — COVER
@@ -128,6 +132,10 @@
     font-family: 'Newsreader', Georgia, serif; font-weight: 400;
     font-size: clamp(78px, min(10vw, 17vh), 190px);
     line-height: 0.92; letter-spacing: -0.012em; color: var(--ink); margin: 0;
+  }
+  .s-cover .brandlogo {
+    display: block; height: clamp(150px, 30vh, 320px); width: auto; max-width: 60%;
+    margin: 0 0 clamp(4px, 1vh, 14px) -8px;
   }
   .s-cover .subkicker { margin-top: clamp(20px, 2.2vh, 36px); display: flex; flex-direction: column; gap: 6px; }
   .s-cover .subkicker .l {
@@ -280,8 +288,8 @@
   }
   .s-chapter .ttl {
     font-family: 'Newsreader', Georgia, serif; font-weight: 400;
-    font-size: clamp(48px, min(5.4vw, 9vh), 116px); line-height: 1.0;
-    color: var(--ink); letter-spacing: -0.005em; margin: 0;
+    font-size: clamp(32px, min(3.9vw, 6.4vh), 72px); line-height: 1.04;
+    color: var(--ink); letter-spacing: -0.005em; margin: 0; max-width: 18ch;
   }
   .s-chapter .lede {
     font-family: 'Hanken Grotesk', sans-serif; font-weight: 400;
@@ -293,6 +301,28 @@
     border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 16px); letter-spacing: 0.03em;
   }
   .s-chapter .runline b { color: var(--ink); }
+  /* The interruption mini-play */
+  .s-chapter .play { display: flex; flex-direction: column; gap: clamp(8px, 1.3vh, 16px); }
+  .s-chapter .line { display: grid; grid-template-columns: clamp(74px, 8vw, 116px) 1fr; gap: clamp(12px, 1.4vw, 22px); align-items: baseline; }
+  .s-chapter .line .spk {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(10px, 0.78vw, 13px);
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); opacity: 0.62; padding-top: 4px;
+  }
+  .s-chapter .line .tx {
+    font-family: 'Newsreader', Georgia, serif; font-size: clamp(17px, 1.6vw, 27px);
+    line-height: 1.22; color: var(--ink);
+  }
+  .s-chapter .line.cut .spk { opacity: 1; font-weight: 500; color: var(--accent); }
+  .s-chapter .line.cut .tx {
+    font-style: italic; border-left: 2px solid var(--accent);
+    padding-left: clamp(10px, 1vw, 16px); margin-left: calc(-1 * clamp(10px, 1vw, 16px));
+  }
+  .s-chapter .line.cut .tx .bargetag {
+    display: inline-block; font-family: 'DM Mono', ui-monospace, monospace; font-style: normal;
+    font-size: clamp(9px, 0.68vw, 11px); letter-spacing: 0.14em; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 3px; padding: 1px 5px;
+    margin-right: 8px; vertical-align: 0.12em;
+  }
 
   /* ══════════════════════════════════════════════════════════════
      SLIDE 5 — DATA (benchmark: bad vs good)
@@ -339,7 +369,7 @@
   .s-data .chart .stack { display: flex; flex-direction: column-reverse; gap: 4px; height: 100%; }
   .s-data .chart .stack .cell { flex: 1 1 0; min-height: 6px; background: rgba(31, 43, 224, 0.10); }
   .s-data .chart .stack .cell.on { background: var(--ink); }
-  .s-data .chart .stack .cell.warn { background: var(--ink-soft); }
+  .s-data .chart .stack .cell.warn { background: var(--accent); }
   .s-data .chart .ticks {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(28px, 5vw, 90px);
     border-top: 1.5px solid var(--ink); padding: clamp(8px, 1vh, 14px) clamp(10px, 4vw, 70px) 0;
@@ -411,14 +441,29 @@
     top: clamp(80px, 9vh, 160px); left: clamp(36px, 3.6vw, 80px);
     width: clamp(220px, 26vw, 460px); bottom: clamp(220px, 22vh, 360px); opacity: 0.75;
   }
-  .s-colophon .qr-block {
-    top: clamp(80px, 9vh, 160px); right: clamp(36px, 3.6vw, 80px);
-    width: clamp(72px, 5vw, 100px); height: clamp(72px, 5vw, 100px);
+  .s-colophon .qrwrap {
+    position: absolute; top: clamp(80px, 9vh, 160px); right: clamp(36px, 3.6vw, 80px);
+    z-index: 5; display: flex; flex-direction: column; align-items: flex-end; gap: clamp(6px, 0.9vh, 10px);
+  }
+  .s-colophon .qrwrap .qr-block { position: static; width: clamp(86px, 6vw, 118px); height: clamp(86px, 6vw, 118px); }
+  .s-colophon .qr-cap {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(9px, 0.72vw, 12px);
+    color: var(--ink); letter-spacing: 0.04em; opacity: 0.8;
   }
   .s-colophon .titlewrap {
-    position: absolute; right: clamp(36px, 3.6vw, 80px); top: 26%;
-    z-index: 5; max-width: 58%; text-align: right;
+    position: absolute; right: clamp(36px, 3.6vw, 80px); top: 24%;
+    z-index: 5; max-width: 60%; text-align: right;
   }
+  .s-colophon .brandlogo-sm {
+    height: clamp(70px, 11vh, 124px); width: auto; display: inline-block;
+    margin-bottom: clamp(6px, 1.2vh, 16px);
+  }
+  .s-colophon .cta {
+    font-family: 'Newsreader', Georgia, serif; font-style: italic;
+    font-size: clamp(18px, 1.7vw, 28px); line-height: 1.3; color: var(--ink);
+    margin-top: clamp(14px, 1.8vh, 26px);
+  }
+  .s-colophon .cta b { font-style: normal; font-weight: 500; color: var(--accent); }
   .s-colophon .ktag {
     font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em;
     font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); margin-bottom: clamp(14px, 1.6vh, 24px);
@@ -462,10 +507,10 @@
     <!-- 1. COVER ──────────────────────────────────────────────── -->
     <section class="slide s-cover hairlines active">
       <div class="titlewrap">
-        <h1 class="title">Pitch<br/>Pilot</h1>
+        <img class="brandlogo" src="assets/brand.png" alt="PitchPilot" />
         <div class="subkicker">
           <div class="l">LiveKit + Telli Hackathon · Judge Mode</div>
-          <div class="ed">A realtime voice judge that interrupts weak pitches before the real judges do.</div>
+          <div class="ed">A realtime voice judge that cuts off bad pitches before real judges lose interest.</div>
         </div>
       </div>
 
@@ -511,10 +556,10 @@
     <!-- 2. MANIFESTO — the problem ─────────────────────────────── -->
     <section class="slide s-manifesto hairlines">
       <div class="stmt-wrap">
-        <p class="stmt">A weak pitch dies in the Q&amp;A — <span class="roman">long after the moment you could have fixed it.</span></p>
+        <p class="stmt">Bad demos don't fail at the end. <span class="roman">They fail in the first 20 seconds.</span></p>
         <div class="attr">
-          <div class="who">The problem</div>
-          <div class="meta-tag">Judges decide in seconds · you find out far too late</div>
+          <div class="who">PitchPilot catches that moment — live</div>
+          <div class="meta-tag">Not in the Q&amp;A · while you're still speaking</div>
         </div>
       </div>
       <div class="pagenum">02 / 07</div>
@@ -545,8 +590,8 @@
           <div class="row">
             <div class="num-tag">03.</div>
             <div>
-              <h3>No demo</h3>
-              <p>Slides describing software no one in the room has actually seen run.</p>
+              <h3>No demo moment</h3>
+              <p>The software may work, but there's no live moment the room remembers.</p>
             </div>
           </div>
           <div class="row">
@@ -596,10 +641,15 @@
       </div>
 
       <div class="frame">
-        <div class="nm-tag">The solution — a judge that doesn't wait politely</div>
-        <h2 class="ttl">It listens, cuts in, and scores on cue.</h2>
-        <p class="lede">PitchPilot joins the room over WebRTC and listens to your pitch as you speak. The moment it hears a weakness it <strong>barges in</strong> — no waiting for you to finish the sentence. Say <strong>"score me"</strong> and it returns a rubric scorecard, spoken aloud and rendered live in the browser.</p>
-        <div class="runline">rubric · <b>Idea 50%</b> &nbsp;/&nbsp; <b>Execution 50%</b> &nbsp;·&nbsp; built for the LiveKit + Telli hackathon</div>
+        <div class="nm-tag">The solution — it barges in mid-sentence</div>
+        <h2 class="ttl">It interrupts the exact sentence that would lose points.</h2>
+        <div class="play">
+          <div class="line"><div class="spk">Founder</div><div class="tx">"We use LiveKit, OpenAI, TanStack, realtime transcription—"</div></div>
+          <div class="line cut"><div class="spk">PitchPilot</div><div class="tx"><span class="bargetag">⏸ BARGE-IN</span>"Pause. That's implementation, not a pitch."</div></div>
+          <div class="line"><div class="spk">Founder</div><div class="tx">"Teams lose because their demo sounds bad."</div></div>
+          <div class="line cut"><div class="spk">PitchPilot</div><div class="tx"><span class="bargetag">⏸ BARGE-IN</span>"Better. Now — why voice?"</div></div>
+        </div>
+        <div class="runline">then say <b>"score me"</b> → rubric scorecard · <b>Idea 50%</b> / <b>Execution 50%</b></div>
       </div>
 
       <div class="pagenum">04 / 07</div>
@@ -617,7 +667,8 @@
             <div class="stat">
               <div class="vbig">81<span style="font-size:0.42em; letter-spacing:0;">/100</span></div>
               <div class="lab2">Good pitch · score_pitch()</div>
-              <div class="desc">A pure <span class="mono">score_pitch(transcript)</span> function (gpt-4o-mini → strict JSON) the good pitch scores far above the bad one — asserted in CI.</div>
+              <div class="desc">A pure <span class="mono">score_pitch(transcript)</span> function scores two fixture pitches and asserts the revised pitch wins — checked in CI.</div>
+              <div class="desc" style="border-top:1px solid var(--ink); padding-top:10px; margin-top:14px;"><strong>The eval isn't about AI quality.</strong> It measures whether the pitch got <em>clearer</em> against the rubric.</div>
             </div>
           </div>
           <div class="chart">
@@ -706,20 +757,16 @@
         </svg>
       </div>
 
-      <div class="qr-block" aria-hidden="true">
-        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
-        <span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span>
-        <span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span>
-        <span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
-        <span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span>
-        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
-        <span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span>
-        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span>
+      <div class="qrwrap">
+        <div class="qr-block real"><img src="assets/qr.svg" alt="Scan for the PitchPilot GitHub repo" /></div>
+        <div class="qr-cap">scan → github.com/whereissam/PitchPilot</div>
       </div>
 
       <div class="titlewrap">
+        <img class="brandlogo-sm" src="assets/brand.png" alt="PitchPilot" />
         <div class="ktag">Closing · PitchPilot</div>
         <h2 class="ttl">Fix the pitch before<br/>the judges hear it.</h2>
+        <div class="cta">Start talking. Get interrupted. Say <b>"score me."</b></div>
       </div>
 
       <div class="col-footer">
