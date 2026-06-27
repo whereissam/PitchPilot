@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import Agent, AgentSession
 from livekit.plugins import openai
+from openai.types.beta.realtime.session import InputAudioNoiseReduction, TurnDetection
 
 from prompts import JUDGE_INSTRUCTIONS
 from scoring import score_pitch
@@ -23,7 +24,13 @@ class JudgeAgent(Agent):
 async def entrypoint(ctx: agents.JobContext):
     await ctx.connect()
     session = AgentSession(
-        llm=openai.realtime.RealtimeModel(voice="marin"),
+        llm=openai.realtime.RealtimeModel(
+            voice="marin",
+            # cut background noise so it doesn't false-trigger / stutter
+            input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
+            # predict end-of-turn semantically for smoother, lower-latency hand-offs
+            turn_detection=TurnDetection(type="semantic_vad", eagerness="medium"),
+        ),
     )
 
     transcript: list[str] = []
