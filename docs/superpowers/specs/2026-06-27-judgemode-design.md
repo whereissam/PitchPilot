@@ -62,7 +62,7 @@ their pitch actually improved."*
 ```
 ┌─────────────┐   WebRTC    ┌──────────────┐   joins    ┌────────────────────────┐
 │  Browser UI │ ──────────► │ LiveKit Room │ ◄───────── │  Python Agent          │
-│ (Next.js +  │             │ (LiveKit     │            │  JudgeMode persona     │
+│ (TanStack   │             │ (LiveKit     │            │  JudgeMode persona     │
 │  React)     │ ◄── data ── │  Cloud)      │            │  openai.realtime       │
 │  Scorecard  │  (V1 only)  └──────────────┘            │  (gpt-realtime)        │
 └─────────────┘                                          └────────────────────────┘
@@ -90,9 +90,9 @@ Three units, each independently understandable/testable:
   plain transcript string (no mic, no room). This is the V2 benchmark anchor.
 - Depends on: `OPENAI_API_KEY` only.
 
-### 3. Frontend (`web/`) — Next.js + React, V1
+### 3. Frontend (`web/`) — TanStack Start + React (run with Bun), V1
 - `@livekit/components-react` + `livekit-client` for room connect, mic publish, audio playback.
-- A Next.js route handler `GET /api/token` mints a LiveKit join token server-side (API key/secret).
+- A TanStack Start server route `GET /api/token` mints a LiveKit join token server-side (API key/secret).
 - **Scorecard panel** subscribes to the data channel and renders the final card. Mock fallback OK.
 
 ## Data flow (V0 path in bold)
@@ -122,7 +122,7 @@ Three units, each independently understandable/testable:
 ## Build order (3 hours, V0 first)
 
 - **H1 — V0 plumbing + soul (riskiest first):** LiveKit Agents worker + `gpt-realtime` answering
-  in a room; Next.js frontend connects via `/api/token`, mic works, you can converse;
+  in a room; TanStack Start frontend connects via `/api/token`, mic works, you can converse;
   judge system prompt + interruption triggers so **barge-in works**; "done" → **spoken scorecard**.
   At the end of H1, the demo is already complete on voice.
 - **H2 — V1:** `scoring.py` + publish scorecard JSON on data channel; Scorecard panel UI renders it.

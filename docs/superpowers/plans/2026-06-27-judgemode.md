@@ -6,7 +6,7 @@
 
 **Architecture:** A Python LiveKit Agents worker runs `openai.realtime.RealtimeModel` with a "tough judge" persona that barges in on weak pitches and speaks a scorecard on the cue "score me" (V0). A Next.js/React frontend mints a token and connects the browser mic to the same room (V0). A pure `score_pitch()` function scores a transcript to JSON for an offline benchmark (V2) and, optionally, for a live UI scorecard pushed over the data channel (V1).
 
-**Tech Stack:** Python 3.12+, `livekit-agents[openai]` (1.x), `openai`, `python-dotenv`, `pytest`; Next.js (App Router) + React + `@livekit/components-react` + `livekit-server-sdk`.
+**Tech Stack:** Python 3.12+, `livekit-agents[openai]` (1.x), `openai`, `python-dotenv`, `pytest`; TanStack Start + React + `@livekit/components-react`, run with Bun; LiveKit token minted by a TanStack Start server route using `livekit-server-sdk`.
 
 ## Global Constraints
 
@@ -18,6 +18,7 @@
 - End-of-pitch cue is the spoken phrase containing "score me" (no UI button).
 - Worker has NO `agent_name` set → LiveKit Cloud auto-dispatches it to every new room.
 - Room name is `judgemode` (frontend and worker share it via auto-dispatch).
+- Frontend: TanStack Start (React, TS) run with Bun (`bunx`/`bun`). Token minted server-side in a TanStack Start server route at `web/src/routes/api.token.ts`; secrets read from `process.env` (Bun loads them from `web/.env`) and never reach the browser. App and `/api/token` share one origin / one process.
 - Env vars: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `OPENAI_API_KEY`.
 - Priority order: **barge-in > scoring > UI > Telli.** Ship V0 (Tasks 1–2) before anything else.
 
@@ -159,58 +160,66 @@ git commit -m "feat(agent): JudgeMode realtime worker with judge persona (V0)"
 ### Task 2: Frontend — token route + room connect + mic (V0 complete)
 
 **Files:**
-- Create: `web/` (via create-next-app)
-- Create: `web/app/api/token/route.ts`
-- Create: `web/app/page.tsx`
-- Create: `web/.env.local` (manual, not committed)
+- Create: `web/` (via `bunx @tanstack/cli create`, TanStack Start + React + TS)
+- Create: `web/src/routes/api.token.ts` (server route that mints the token)
+- Create: `web/src/components/JudgeApp.tsx` (client-only LiveKit UI)
+- Modify: `web/src/routes/index.tsx` (lazy-load JudgeApp, client-only)
+- Create: `web/.env` (manual, not committed)
 
 **Interfaces:**
 - Consumes: a running worker from Task 1 (auto-dispatched into room `judgemode`).
-- Produces: `GET /api/token` → `{ token: string, url: string }`; a page that connects the browser mic to room `judgemode`.
+- Produces: `GET /api/token` → `{ token: string, url: string }` (same origin as the app);
+  a page that connects the browser mic to room `judgemode`.
 
-- [ ] **Step 1: Scaffold Next.js app**
+- [ ] **Step 1: Scaffold the TanStack Start app (run with Bun)**
 
 Run (from repo root):
 ```bash
-npx create-next-app@latest web --ts --app --no-tailwind --no-eslint --no-src-dir --import-alias "@/*" --use-npm
+bunx @tanstack/cli@latest create web --framework React --package-manager bun --no-examples --no-toolchain --no-git --yes
 ```
-If prompted about Turbopack or other options, accept defaults. Expected: `web/` created.
+Expected: `web/` created with TanStack Start (React + TS), deps installed via bun.
+Note: this CLI always enables Tailwind; we use inline styles, so just ignore it.
 
 - [ ] **Step 2: Add LiveKit deps**
 
 Run:
 ```bash
-cd web && npm install @livekit/components-react @livekit/components-styles livekit-client livekit-server-sdk
+cd web && bun add @livekit/components-react @livekit/components-styles livekit-client livekit-server-sdk
 ```
 Expected: installs without error.
 
-- [ ] **Step 3: Create `web/app/api/token/route.ts`**
+- [ ] **Step 3: Create `web/src/routes/api.token.ts`** (server route — mints the token server-side)
 
 ```ts
+import { createFileRoute } from "@tanstack/react-router";
 import { AccessToken } from "livekit-server-sdk";
-import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
-export async function GET() {
-  const { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } = process.env;
-  if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
-    return NextResponse.json({ error: "Missing LiveKit env vars" }, { status: 500 });
-  }
-  const room = "judgemode";
-  const identity = "pitcher-" + Math.random().toString(36).slice(2, 8);
-  const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity });
-  at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true });
-  const token = await at.toJwt();
-  return NextResponse.json({ token, url: LIVEKIT_URL });
-}
+export const Route = createFileRoute("/api/token")({
+  server: {
+    handlers: {
+      GET: async () => {
+        const { LIVEKIT_API_KEY, LIVEKIT_API_SECRET, LIVEKIT_URL } = process.env;
+        if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
+          return Response.json({ error: "Missing LiveKit env vars" }, { status: 500 });
+        }
+        const room = "judgemode";
+        const identity = "pitcher-" + Math.random().toString(36).slice(2, 8);
+        const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity });
+        at.addGrant({ room, roomJoin: true, canPublish: true, canSubscribe: true });
+        const token = await at.toJwt();
+        return Response.json({ token, url: LIVEKIT_URL });
+      },
+    },
+  },
+});
 ```
+Bun loads `web/.env` into `process.env` at startup, so the handler sees the secrets; because
+they are not `VITE_`-prefixed they never reach the browser bundle.
 
-- [ ] **Step 4: Replace `web/app/page.tsx`**
+- [ ] **Step 4: Create the client UI**
 
+Create `web/src/components/JudgeApp.tsx`:
 ```tsx
-"use client";
-
 import { useState } from "react";
 import {
   LiveKitRoom,
@@ -228,12 +237,12 @@ function Stage() {
     <div style={{ padding: 24, fontFamily: "system-ui" }}>
       <h1>JudgeMode</h1>
       <p>Judge is: <b>{state}</b></p>
-      <p>Pitch your project. Say <b>“score me”</b> when you’re done.</p>
+      <p>Pitch your project. Say <b>"score me"</b> when you're done.</p>
     </div>
   );
 }
 
-export default function Page() {
+export default function JudgeApp() {
   const [conn, setConn] = useState<Conn | null>(null);
 
   if (!conn) {
@@ -245,7 +254,7 @@ export default function Page() {
           style={{ fontSize: 18, padding: "12px 20px" }}
           onClick={async () => {
             const res = await fetch("/api/token");
-            if (!res.ok) { alert("Token error — check web/.env.local"); return; }
+            if (!res.ok) { alert("Token error — check web/.env and restart bun run dev"); return; }
             setConn(await res.json());
           }}
         >
@@ -265,7 +274,37 @@ export default function Page() {
 }
 ```
 
-- [ ] **Step 5: Create `web/.env.local`** (manual, not committed) with the SAME LiveKit values as `agent/.env`:
+Replace the entire contents of `web/src/routes/index.tsx` so the home route lazy-loads JudgeApp
+on the client only (keeps the browser-only LiveKit code out of SSR):
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+const JudgeApp = lazy(() => import("../components/JudgeApp"));
+
+export const Route = createFileRoute("/")({ component: Home });
+
+function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <main style={{ padding: 48, fontFamily: "system-ui" }}>
+        <h1>JudgeMode</h1>
+        <p>Loading…</p>
+      </main>
+    );
+  }
+  return (
+    <Suspense fallback={<p style={{ padding: 48 }}>Loading…</p>}>
+      <JudgeApp />
+    </Suspense>
+  );
+}
+```
+The scaffolded `index.tsx` ships a demo body — replace ALL of it with the above.
+
+- [ ] **Step 5: Create `web/.env`** (manual, not committed) with the SAME LiveKit values as `agent/.env`:
 
 ```
 LIVEKIT_URL=wss://YOUR-PROJECT.livekit.cloud
@@ -273,13 +312,21 @@ LIVEKIT_API_KEY=
 LIVEKIT_API_SECRET=
 ```
 
-- [ ] **Step 6: Run the frontend and smoke-test V0 end-to-end**
+- [ ] **Step 6: Build, then run + smoke-test V0 end-to-end**
 
-Run (with the Task 1 worker still running):
+First verify it compiles:
 ```bash
-cd web && npm run dev
+cd web && bun run build
 ```
-Then open http://localhost:3000, click **Start pitching**, allow mic.
+Expected: build succeeds (type-checks + bundles). If the LiveKit import breaks SSR, the
+lazy/client-only guard in `index.tsx` should prevent it — confirm `JudgeApp` is referenced ONLY
+via `lazy(() => import(...))` and never imported directly in a route or `__root` file.
+
+Then run (with the Task 1 worker still running) and test in the browser:
+```bash
+cd web && bun run dev
+```
+Open the printed URL (TanStack Start defaults to http://localhost:3000), click **Start pitching**, allow mic.
 Expected:
 - The worker terminal logs a new job / participant joining room `judgemode`.
 - You hear the judge greet you.
@@ -312,9 +359,10 @@ Restart `python main.py dev` and re-test.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add web/app web/package.json web/package-lock.json
-git commit -m "feat(web): browser mic connects to JudgeMode room (V0 complete)"
+git add web
+git commit -m "feat(web): TanStack Start app — browser mic connects to JudgeMode room (V0 complete)"
 ```
+(`node_modules` and `.env` are gitignored, so `git add web` won't stage them.)
 
 ---
 
@@ -529,13 +577,13 @@ git commit -m "feat(agent): publish scorecard JSON on data channel when user say
 ### Task 5: Frontend scorecard panel (V1 complete)
 
 **Files:**
-- Modify: `web/app/page.tsx`
+- Modify: `web/src/components/JudgeApp.tsx`
 
 **Interfaces:**
 - Consumes: data-channel topic `scorecard` JSON from Task 4 (keys per Global Constraints).
 - Produces: a rendered scorecard panel in the page.
 
-- [ ] **Step 1: Add a `Scorecard` component and wire `useDataChannel` in `web/app/page.tsx`**
+- [ ] **Step 1: Add a `Scorecard` component and wire `useDataChannel` in `web/src/components/JudgeApp.tsx`**
 
 Add imports and component, and render `<Scorecard />` inside `LiveKitRoom`:
 
@@ -586,7 +634,7 @@ Expected: judge speaks the card AND the Scorecard panel renders the same numbers
 - [ ] **Step 3: Commit**
 
 ```bash
-git add web/app/page.tsx
+git add web/src/components/JudgeApp.tsx
 git commit -m "feat(web): render live scorecard from data channel (V1 complete)"
 ```
 
