@@ -33,6 +33,19 @@ Plan: [`superpowers/plans/2026-06-27-judgemode.md`](superpowers/plans/2026-06-27
 - `agent/scoring.py`: `bool(data.get("benchmark_present"))` would treat the string `"false"` as True
   (low risk under JSON mode).
 
+## Pitch history & progress (built — needs live verification)
+
+Spec: [`superpowers/specs/2026-06-27-pitch-history-design.md`](superpowers/specs/2026-06-27-pitch-history-design.md).
+Save every finished pitch (scorecard required; transcript + audio best-effort), `/history`
+trend + list, `/history/$id` detail with replay. API + storage verified end-to-end against a
+dev server (POST/list/detail/audio/404s/validation); 12/12 unit tests pass.
+
+- [ ] **Live voice smoke test (human-only):** run `agent: python main.py dev` + web, pitch,
+      say "score me". Confirm a `.json` (and `.webm`) lands in `web/data/pitches/`, then open
+      `/history`, see the score trend, open the detail page, and replay the audio.
+- [ ] If audio capture misbehaves in the live run, remember it's best-effort — text history
+      (scorecard + transcript) must still save. Ship text-only if audio fights back.
+
 ## Stretch (only if V0 lands with time to spare)
 
 - [ ] Telli "judge calls your phone" via SIP — bonus-prize bait. Do NOT start until V0 is demo-ready.
