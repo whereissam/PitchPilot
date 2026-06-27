@@ -22,7 +22,7 @@ const metrics = [
       </p>
       <p class="card-sec__note mono">
         idea · execution · demo_clarity · technical_depth · why_voice ·
-        benchmark_present · best_next_fix
+        benchmark_present · best_next_fix · verdict · total
       </p>
     </div>
 
@@ -70,6 +70,11 @@ const metrics = [
           Open with the user and their pain in one sentence before you say the
           word “platform.”
         </p>
+      </div>
+
+      <div class="card__verdict">
+        <span class="card__verdict-tag mono">verdict</span>
+        <span class="card__verdict-text">Clear demo, weak benchmark.</span>
       </div>
     </figure>
   </div>
@@ -194,6 +199,22 @@ const metrics = [
     font-size: 1.05rem;
     color: var(--navy);
     line-height: 1.4;
+  }
+
+  .card__verdict {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    margin: 0 1.4rem 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .card__verdict-tag { font-size: 0.64rem; letter-spacing: 0.18em; color: var(--navy-soft); }
+  .card__verdict-text {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--navy);
   }
 
   .wrap-rule {

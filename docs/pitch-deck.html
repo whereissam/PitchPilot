@@ -665,28 +665,32 @@
         <div class="body">
           <div class="col-a">
             <div class="stat">
-              <div class="vbig">81<span style="font-size:0.42em; letter-spacing:0;">/100</span></div>
-              <div class="lab2">Good pitch · score_pitch()</div>
-              <div class="desc">A pure <span class="mono">score_pitch(transcript)</span> function scores two fixture pitches and asserts the revised pitch wins — checked in CI.</div>
-              <div class="desc" style="border-top:1px solid var(--ink); padding-top:10px; margin-top:14px;"><strong>The eval isn't about AI quality.</strong> It measures whether the pitch got <em>clearer</em> against the rubric.</div>
+              <div class="vbig">65<span style="font-size:0.42em; letter-spacing:0;">/100</span></div>
+              <div class="lab2">Good pitch · total, computed in code</div>
+              <div class="desc">A typed <span class="mono">score_pitch()</span> grades two fixtures and asserts the revised pitch wins — checked in CI.</div>
+              <div class="desc" style="border-top:1px solid var(--ink); padding-top:clamp(8px,1.2vh,12px); margin-top:clamp(10px,1.4vh,16px);">
+                <span class="mono" style="font-size:var(--small-size); letter-spacing:0.14em; opacity:0.75;">OFFICIAL RUBRIC</span><br/>
+                <strong>Idea 50%</strong> — technical depth · impressive demo<br/>
+                <strong>Execution 50%</strong> — inspiring idea · useful eval
+              </div>
             </div>
           </div>
           <div class="chart">
             <!-- Two pixel stacks, 10 cells each; .on cells fill from baseline. -->
             <div class="bars">
-              <div class="stack"><!-- Bad pitch: 4/10 -->
-                <div class="cell warn"></div><div class="cell warn"></div><div class="cell warn"></div><div class="cell warn"></div>
-                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              <div class="stack"><!-- Bad pitch: 2/10 -->
+                <div class="cell warn"></div><div class="cell warn"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
               </div>
-              <div class="stack"><!-- Good pitch: 8/10 -->
+              <div class="stack"><!-- Good pitch: ~7/10 -->
                 <div class="cell on"></div><div class="cell on"></div><div class="cell on"></div><div class="cell on"></div>
-                <div class="cell on"></div><div class="cell on"></div><div class="cell on"></div><div class="cell on"></div>
-                <div class="cell"></div><div class="cell"></div>
+                <div class="cell on"></div><div class="cell on"></div><div class="cell on"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div>
               </div>
             </div>
             <div class="ticks">
-              <div class="ticklab">BAD PITCH<br/><b>38 / 100</b></div>
-              <div class="ticklab">GOOD PITCH<br/><b>81 / 100</b></div>
+              <div class="ticklab">BAD PITCH<br/><b>20 / 100</b></div>
+              <div class="ticklab">GOOD PITCH<br/><b>65 / 100</b></div>
             </div>
           </div>
         </div>

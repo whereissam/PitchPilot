@@ -17,11 +17,11 @@ Built for the LiveKit + Telli hackathon. The rubric is Idea 50%, Execution 50%.
 └─────────────┘                                          └────────────────────────┘
 ```
 
-The agent in `agent/` is a Python [LiveKit Agents](https://docs.livekit.io/agents/) worker. It runs the OpenAI realtime model with a tough-judge persona, speaks the scorecard out loud, and also publishes it as JSON over the data channel.
+The agent in `agent/` is a Python [LiveKit Agents](https://docs.livekit.io/agents/) worker. It runs the OpenAI realtime model with a tough-judge persona. The realtime model only hosts and interrupts — it never invents scores. On the scoring cue it computes the card with `score_pitch()`, publishes it as JSON over the data channel, then reads back that exact card out loud, so the voice and the on-screen scorecard can never disagree (one source of truth).
 
 The frontend in `web/` is a TanStack Start app (React and TypeScript, run with Bun). It mints a LiveKit token from a server route, connects your mic to the room, and draws the scorecard.
 
-`agent/scoring.py` holds one plain function, `score_pitch(transcript)`. It calls gpt-4o-mini and returns strict JSON. It also doubles as the benchmark: a bad pitch has to score below a good one, and `agent/test_scoring.py` checks that.
+`agent/scoring.py` holds one plain function, `score_pitch(transcript)`, returning a typed `Scorecard` (Pydantic + OpenAI structured outputs, `gpt-4o`). `total` is the official rubric score — Idea 50% plus Execution 50% — computed in code, never by the model. Only the founder's turns are scored, so the judge's own interruptions can't be counted as pitch content. It also doubles as the benchmark: a bad pitch has to score below a good one, and `agent/test_scoring.py` checks that.
 
 The worker sets no `agent_name`, so LiveKit Cloud sends it into every new room. Both sides meet in a room called `judgemode`.
 
