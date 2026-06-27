@@ -1,0 +1,164 @@
+/* ============================================================
+   PitchPilot — brand system
+   Navy ink (#28347A) + orange "red-pen" accent (#FF5D30) on paper.
+   Faint navy graph-paper grid carried over from the pitch deck.
+   Type: Newsreader (display), Hanken Grotesk (body), DM Mono (labels).
+   ============================================================ */
+
+:root {
+  --navy: #28347a;
+  --navy-soft: #5560e5;
+  --navy-ink: #1d2659;
+  --orange: #ff5d30;
+  --orange-deep: #e8431a;
+
+  --paper: #fbfaf7;
+  --paper-2: #f3f1ea;
+  --line: rgba(40, 52, 122, 0.14);
+  --grid: rgba(40, 52, 122, 0.05);
+
+  --ink: var(--navy);
+  --muted: color-mix(in oklch, var(--navy) 62%, var(--paper));
+
+  --maxw: 1180px;
+  --gut: clamp(1.25rem, 4vw, 4rem);
+
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans: 'Hanken Grotesk', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: 'DM Mono', ui-monospace, 'SF Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: clamp(30px, 2.4vw, 46px) clamp(30px, 2.4vw, 46px);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---- type ---- */
+.display {
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.01em;
+}
+.serif-italic { font-family: var(--serif); font-style: italic; font-weight: 400; }
+
+.label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--orange);
+  font-weight: 500;
+}
+.mono { font-family: var(--mono); }
+
+h1, h2, h3 { margin: 0; }
+p { margin: 0; }
+a { color: inherit; }
+
+/* ---- layout helpers ---- */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--gut);
+}
+
+.section {
+  padding-block: clamp(4.5rem, 11vh, 9rem);
+  position: relative;
+}
+
+.rule {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+  margin: 0;
+}
+
+/* a small numbered eyebrow like a critic's section marker */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+}
+.eyebrow::before {
+  content: '';
+  width: 26px;
+  height: 2px;
+  background: var(--orange);
+}
+
+/* buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.98rem;
+  text-decoration: none;
+  padding: 0.85rem 1.5rem;
+  border-radius: 2px;
+  border: 1.5px solid var(--navy);
+  transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1), background 160ms, color 160ms, box-shadow 160ms;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--navy);
+  color: var(--paper);
+  box-shadow: 4px 4px 0 var(--orange);
+}
+.btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--orange);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--navy);
+  border-color: var(--line);
+}
+.btn-ghost:hover { border-color: var(--navy); }
+
+/* reveal-on-load / scroll */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.is-in [data-reveal],
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+[data-reveal][data-delay='1'] { transition-delay: 90ms; }
+[data-reveal][data-delay='2'] { transition-delay: 180ms; }
+[data-reveal][data-delay='3'] { transition-delay: 270ms; }
+[data-reveal][data-delay='4'] { transition-delay: 360ms; }
+
+::selection { background: var(--orange); color: #fff; }

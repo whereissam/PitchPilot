@@ -1,0 +1,209 @@
+---
+// mirrors the real JSON from agent/scoring.py
+const metrics = [
+  { key: 'technical_depth', label: 'Technical depth', score: 8 },
+  { key: 'demo_clarity', label: 'Demo clarity', score: 7 },
+  { key: 'why_voice', label: 'Why realtime voice', score: 6 },
+]
+---
+
+<section class="section card-sec" id="scorecard">
+  <div class="wrap card-sec__grid">
+    <div class="card-sec__copy" data-reveal>
+      <span class="eyebrow label">Say “score me”</span>
+      <h2 class="display card-sec__title">
+        A verdict against<br />the rubric. Out loud,<br />and on the screen.
+      </h2>
+      <p class="card-sec__sub">
+        Two halves, fifty-fifty: how good the idea is, and how well you pulled
+        it off. The judge reads it back to you and drops the same numbers into
+        the room as JSON — including the one fix worth making before the real
+        judges arrive.
+      </p>
+      <p class="card-sec__note mono">
+        idea · execution · demo_clarity · technical_depth · why_voice ·
+        benchmark_present · best_next_fix
+      </p>
+    </div>
+
+    <!-- scorecard -->
+    <figure class="card" data-reveal data-delay="1" aria-label="Example PitchPilot scorecard">
+      <figcaption class="card__top">
+        <span class="card__title mono">SCORECARD</span>
+        <span class="card__room mono">judgemode</span>
+      </figcaption>
+
+      <div class="card__halves">
+        <div class="half">
+          <span class="half__label">Idea</span>
+          <span class="half__weight mono">50%</span>
+          <span class="half__score display">7<span class="half__max">/10</span></span>
+        </div>
+        <div class="half half--alt">
+          <span class="half__label">Execution</span>
+          <span class="half__weight mono">50%</span>
+          <span class="half__score display">7<span class="half__max">/10</span></span>
+        </div>
+      </div>
+
+      <div class="card__bars">
+        {
+          metrics.map((m) => (
+            <div class="bar">
+              <span class="bar__label">{m.label}</span>
+              <span class="bar__track">
+                <span class="bar__fill" style={`width:${m.score * 10}%`} />
+              </span>
+              <span class="bar__num mono">{m.score}</span>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="card__chip">
+        <span class="chip chip--yes">benchmark_present · true</span>
+      </div>
+
+      <div class="card__fix">
+        <span class="card__fix-tag mono">best_next_fix</span>
+        <p class="card__fix-text">
+          Open with the user and their pain in one sentence before you say the
+          word “platform.”
+        </p>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<hr class="rule wrap-rule" />
+
+<style>
+  .card-sec__grid {
+    display: grid;
+    grid-template-columns: 1fr 0.92fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+  .card-sec__title {
+    font-size: clamp(2.1rem, 4.4vw, 3.3rem);
+    color: var(--navy);
+    margin-bottom: 1.2rem;
+  }
+  .card-sec__sub { font-size: 1.1rem; color: var(--muted); max-width: 42ch; }
+  .card-sec__note {
+    margin-top: 1.5rem;
+    font-size: 0.76rem;
+    color: var(--navy-soft);
+    line-height: 1.7;
+    word-spacing: 0.1em;
+  }
+
+  .card {
+    margin: 0;
+    background: #fff;
+    border: 1.5px solid var(--navy);
+    border-radius: 4px;
+    box-shadow: 12px 14px 0 rgba(255, 93, 48, 0.16);
+    overflow: hidden;
+  }
+  .card__top {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1.2rem;
+    background: var(--navy);
+    color: var(--paper);
+  }
+  .card__title { font-size: 0.72rem; letter-spacing: 0.22em; }
+  .card__room { font-size: 0.72rem; opacity: 0.7; }
+
+  .card__halves {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .half {
+    padding: 1.4rem 1.4rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    row-gap: 0.2rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .half--alt { border-left: 1px solid var(--line); }
+  .half__label {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    color: var(--navy);
+  }
+  .half__weight { font-size: 0.74rem; color: var(--orange); }
+  .half__score {
+    grid-column: 1 / -1;
+    font-size: 3.2rem;
+    color: var(--navy);
+    line-height: 1;
+    margin-top: 0.3rem;
+  }
+  .half__max { font-size: 1.1rem; color: var(--muted); }
+
+  .card__bars { padding: 1.3rem 1.4rem 0.5rem; display: grid; gap: 0.85rem; }
+  .bar {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr 1.4rem;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .bar__label { font-size: 0.88rem; color: var(--navy-ink); }
+  .bar__track {
+    height: 7px;
+    background: var(--paper-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar__fill {
+    display: block;
+    height: 100%;
+    background: var(--orange);
+    border-radius: 4px;
+  }
+  .bar__num { font-size: 0.82rem; color: var(--muted); text-align: right; }
+
+  .card__chip { padding: 0.9rem 1.4rem 0; }
+  .chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+  }
+  .chip--yes {
+    color: #0f7a4d;
+    background: color-mix(in oklch, #0f7a4d 12%, #fff);
+    border: 1px solid color-mix(in oklch, #0f7a4d 30%, #fff);
+  }
+
+  .card__fix {
+    margin: 1.1rem 1.4rem 1.5rem;
+    padding: 0.9rem 1rem;
+    border-left: 4px solid var(--orange);
+    background: color-mix(in oklch, var(--orange) 8%, #fff);
+    border-radius: 0 4px 4px 0;
+  }
+  .card__fix-tag { font-size: 0.64rem; letter-spacing: 0.18em; color: var(--orange-deep); }
+  .card__fix-text {
+    margin-top: 0.35rem;
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    color: var(--navy);
+    line-height: 1.4;
+  }
+
+  .wrap-rule {
+    max-width: var(--maxw);
+    margin-inline: auto;
+    width: calc(100% - 2 * var(--gut));
+  }
+
+  @media (max-width: 900px) {
+    .card-sec__grid { grid-template-columns: 1fr; }
+    .card { max-width: 480px; }
+  }
+</style>

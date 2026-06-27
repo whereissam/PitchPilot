@@ -1,0 +1,94 @@
+---
+---
+
+<section class="section closer">
+  <div class="wrap closer__grid">
+    <div class="closer__main" data-reveal>
+      <span class="eyebrow label">The benchmark</span>
+      <h2 class="display closer__title">
+        A bad pitch has to score<br />below a good one.
+      </h2>
+      <p class="closer__sub">
+        The scoring isn’t vibes. It runs without a microphone as a plain test: a
+        weak pitch must land under a strong one, every time, or the judge isn’t
+        trustworthy. It’s held to its own standard before it’s allowed to hold
+        you to yours.
+      </p>
+      <div class="closer__cta">
+        <a class="btn btn-primary" href="#top">Pitch to it →</a>
+        <a class="btn btn-ghost" href="https://github.com" target="_blank" rel="noopener">Read the code</a>
+      </div>
+    </div>
+
+    <div class="proof" data-reveal data-delay="1" aria-hidden="true">
+      <div class="proof__row">
+        <span class="proof__tag">weak pitch</span>
+        <span class="proof__bar"><span style="width:30%; background:var(--muted)"></span></span>
+        <span class="proof__n mono">3.0</span>
+      </div>
+      <div class="proof__row">
+        <span class="proof__tag">strong pitch</span>
+        <span class="proof__bar"><span style="width:80%"></span></span>
+        <span class="proof__n mono">8.0</span>
+      </div>
+      <p class="proof__assert mono">assert weak &lt; strong ✓</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .closer { padding-block: clamp(5rem, 12vh, 9rem); }
+  .closer__grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+  .closer__title {
+    font-size: clamp(2.3rem, 5vw, 3.8rem);
+    color: var(--navy);
+    margin-bottom: 1.2rem;
+  }
+  .closer__sub { font-size: 1.12rem; color: var(--muted); max-width: 46ch; }
+  .closer__cta { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 2rem; }
+
+  .proof {
+    background: var(--navy);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 1.8rem 1.6rem;
+    box-shadow: 10px 12px 0 rgba(40, 52, 122, 0.12);
+  }
+  .proof__row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr 2rem;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.1rem;
+  }
+  .proof__tag { font-size: 0.82rem; opacity: 0.85; }
+  .proof__bar {
+    height: 9px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .proof__bar span {
+    display: block;
+    height: 100%;
+    background: var(--orange);
+    border-radius: 4px;
+  }
+  .proof__n { font-size: 0.86rem; text-align: right; }
+  .proof__assert {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #8ff0bf;
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 860px) {
+    .closer__grid { grid-template-columns: 1fr; }
+    .proof { max-width: 460px; }
+  }
+</style>

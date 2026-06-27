@@ -162,7 +162,8 @@ function Stage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b-2 border-ink px-6 py-4 md:px-10">
-        <div className="flex items-baseline gap-3">
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="" className="h-8 w-8 md:h-9 md:w-9" />
           <span className="font-display text-2xl leading-none tracking-tight md:text-3xl">
             PITCHPILOT
           </span>
@@ -199,8 +200,11 @@ export default function JudgeApp() {
   if (!conn) {
     return (
       <main className="flex min-h-screen flex-col justify-between px-6 py-12 md:px-16 md:py-20">
-        <div className="font-body text-xs font-bold tracking-[0.28em] text-acid">
-          LIVEKIT × TELLI — REALTIME VOICE
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="PitchPilot" className="h-11 w-11 md:h-12 md:w-12" />
+          <span className="font-body text-xs font-bold tracking-[0.28em] text-acid">
+            REALTIME VOICE JUDGE
+          </span>
         </div>
 
         <div>

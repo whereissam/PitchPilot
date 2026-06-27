@@ -1,0 +1,121 @@
+---
+const steps = [
+  {
+    k: 'You',
+    sub: 'Browser · your mic',
+    body: 'Open the room, hit start, and pitch. Your voice streams straight into the session over WebRTC — no setup, no upload.',
+  },
+  {
+    k: 'The room',
+    sub: 'Realtime audio bridge',
+    body: 'A live room connects you and the judge with sub-second latency, so the interruption lands while you’re still mid-sentence.',
+  },
+  {
+    k: 'The judge',
+    sub: 'Voice agent · gpt-realtime',
+    body: 'A tough-judge persona listens, talks back out loud, and publishes the scorecard as JSON the moment you ask for it.',
+  },
+]
+---
+
+<section class="section how" id="how">
+  <div class="wrap">
+    <div class="how__head" data-reveal>
+      <span class="eyebrow label">How it works</span>
+      <h2 class="display how__title">Three pieces. One live room.</h2>
+      <p class="how__sub">
+        No accounts, no waiting for a verdict. You talk, the judge talks back,
+        and the whole thing happens in the time it takes to say one weak
+        sentence.
+      </p>
+    </div>
+
+    <ol class="flow" data-reveal-group>
+      {
+        steps.map((s, i) => (
+          <li class="node" data-reveal data-delay={i + 1}>
+            <span class="node__k mono">{`0${i + 1}`}</span>
+            <h3 class="node__title">{s.k}</h3>
+            <span class="node__sub mono">{s.sub}</span>
+            <p class="node__body">{s.body}</p>
+            {i < 2 && <span class="node__arrow" aria-hidden="true">→</span>}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<hr class="rule wrap-rule" />
+
+<style>
+  .how__head { max-width: 50rem; margin-bottom: clamp(2.5rem, 5vw, 4rem); }
+  .how__title {
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    color: var(--navy);
+    margin-bottom: 1rem;
+  }
+  .how__sub { font-size: 1.1rem; color: var(--muted); max-width: 48ch; }
+
+  .flow {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(1rem, 3vw, 2.5rem);
+  }
+  .node {
+    position: relative;
+    background: #fff;
+    border: 1.5px solid var(--navy);
+    border-radius: 4px;
+    padding: 1.6rem 1.5rem 1.8rem;
+    box-shadow: 6px 6px 0 rgba(40, 52, 122, 0.08);
+  }
+  .node__k {
+    font-size: 0.74rem;
+    color: var(--orange);
+    letter-spacing: 0.14em;
+  }
+  .node__title {
+    font-family: var(--serif);
+    font-size: 1.85rem;
+    color: var(--navy);
+    margin: 0.5rem 0 0.25rem;
+  }
+  .node__sub {
+    display: block;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+  }
+  .node__body { font-size: 0.96rem; color: var(--muted); line-height: 1.55; }
+  .node__arrow {
+    position: absolute;
+    right: -1.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.3rem;
+    color: var(--orange);
+    z-index: 2;
+  }
+
+  .wrap-rule {
+    max-width: var(--maxw);
+    margin-inline: auto;
+    width: calc(100% - 2 * var(--gut));
+  }
+
+  @media (max-width: 760px) {
+    .flow { grid-template-columns: 1fr; }
+    .node__arrow {
+      right: 50%;
+      top: auto;
+      bottom: -1.5rem;
+      transform: translateX(50%) rotate(90deg);
+    }
+  }
+</style>

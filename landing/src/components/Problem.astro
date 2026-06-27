@@ -1,0 +1,132 @@
+---
+const tells = [
+  {
+    n: '01',
+    title: 'No clear problem',
+    body: 'You describe the product before anyone knows what hurts. The judge asks who, and why now.',
+  },
+  {
+    n: '02',
+    title: 'A thin “why you”',
+    body: 'Nothing about why this team, with this unfair advantage, is the one to build it.',
+  },
+  {
+    n: '03',
+    title: 'No demo',
+    body: 'Claims with nothing running behind them. Show the thing working, not slides about the thing.',
+  },
+  {
+    n: '04',
+    title: 'No benchmark',
+    body: 'A bold claim and no number. PitchPilot wants the measurement that proves it.',
+  },
+  {
+    n: '05',
+    title: 'Too much jargon',
+    body: 'Synergy, leverage, ecosystem, paradigm. Words that fill time and say nothing.',
+  },
+]
+---
+
+<section class="section" id="problem">
+  <div class="wrap">
+    <div class="head" data-reveal>
+      <span class="eyebrow label">What it listens for</span>
+      <h2 class="display head__title">
+        Five soft spots.<br />It hears them<span class="accent"> in real time.</span>
+      </h2>
+      <p class="head__sub">
+        Most pitches die in the same five places. PitchPilot is tuned to catch
+        each one the moment it slips out — not in the feedback afterward, when
+        it’s already too late.
+      </p>
+    </div>
+
+    <ol class="tells" data-reveal-group>
+      {
+        tells.map((t, i) => (
+          <li class="tell" data-reveal data-delay={(i % 4) + 1}>
+            <span class="tell__n mono">{t.n}</span>
+            <div class="tell__mark" aria-hidden="true">✗</div>
+            <h3 class="tell__title">{t.title}</h3>
+            <p class="tell__body">{t.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<hr class="rule wrap-rule" />
+
+<style>
+  .head { max-width: 52rem; margin-bottom: clamp(2.5rem, 5vw, 4rem); }
+  .head__title {
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    color: var(--navy);
+    margin-bottom: 1.1rem;
+  }
+  .accent { color: var(--orange); }
+  .head__sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  .tells {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .tell {
+    position: relative;
+    padding: 1.8rem 1.6rem 2rem;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in oklch, var(--paper) 60%, transparent);
+    transition: background 200ms;
+  }
+  .tell:hover { background: #fff; }
+  .tell__n {
+    font-size: 0.74rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .tell__mark {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    font-size: 1.3rem;
+    color: var(--orange);
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+    transition: opacity 200ms, transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .tell:hover .tell__mark {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+  .tell__title {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    color: var(--navy);
+    margin: 0.9rem 0 0.6rem;
+    line-height: 1.1;
+  }
+  .tell__body {
+    font-size: 0.96rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .wrap-rule {
+    max-width: var(--maxw);
+    margin-inline: auto;
+    width: calc(100% - 2 * var(--gut));
+  }
+</style>
