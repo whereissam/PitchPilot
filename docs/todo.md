@@ -17,12 +17,12 @@ Plan: [`superpowers/plans/2026-06-27-judgemode.md`](superpowers/plans/2026-06-27
 
 ## Human-only steps (cannot be automated)
 
-- [ ] Put real keys in `agent/.env` (LIVEKIT_* + OPENAI_API_KEY) and `web/.env` (LIVEKIT_* only).
+- [x] Put real keys in `agent/.env` (LIVEKIT_* + OPENAI_API_KEY) and `web/.env` (LIVEKIT_* only).
 - [ ] **V0 voice smoke test:** run `agent: python main.py dev` + `web: bun run dev`, open the app,
       pitch badly, confirm the judge **barges in**, say "score me", confirm it speaks a scorecard.
 - [ ] If the judge is too polite to interrupt, apply the eager turn-detection tuning
       (plan Task 2, Step 7) and re-test.
-- [ ] **Run the benchmark for real:** `cd agent && OPENAI_API_KEY=… python -m pytest test_scoring.py -v`
+- [x] **Run the benchmark for real:** `cd agent && OPENAI_API_KEY=… python -m pytest test_scoring.py -v`
       (skips without the key). Confirm the good pitch outscores the bad one.
 - [ ] Rehearse the 90-second demo script (in the design spec).
 
