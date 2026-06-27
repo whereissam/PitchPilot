@@ -12,7 +12,16 @@ import {
   audioPath,
   toTrend,
   type Scorecard,
+  type Feedback,
 } from "./pitches";
+
+const feedback: Feedback = {
+  action_title: "Lead with the pain, not the stack.",
+  what_landed: null,
+  critique: "Too much implementation before the problem.",
+  lowest_metric: { name: "why_voice", score: 3, reason: "Sounds like chat with a mic." },
+  weakest_line: { quote: null, why_weak: "stack before pain", rewrite: "Teams lose judges fast." },
+};
 
 const card: Scorecard = {
   idea: 7,
@@ -100,6 +109,21 @@ describe("write / read round-trip", () => {
   it("returns null for a missing id", async () => {
     expect(await readRecord(dir, "2099-01-01T00-00-00-000Z")).toBeNull();
   });
+
+  it("round-trips feedback and lifts action_title to top-level actionTitle", async () => {
+    const rec = buildRecord({ scorecard: card, feedback, date: new Date() });
+    expect(rec.actionTitle).toBe("Lead with the pain, not the stack.");
+    await writeRecord(dir, rec);
+    const back = await readRecord(dir, rec.id);
+    expect(back).toEqual(rec);
+    expect(back!.feedback).toEqual(feedback);
+  });
+
+  it("defaults feedback to null and actionTitle to null", () => {
+    const rec = buildRecord({ scorecard: card, date: new Date() });
+    expect(rec.feedback).toBeNull();
+    expect(rec.actionTitle).toBeNull();
+  });
 });
 
 describe("listRecords", () => {
@@ -112,7 +136,13 @@ describe("listRecords", () => {
 
     const list = await listRecords(dir);
     expect(list.map((i) => i.id)).toEqual([newer.id, older.id]);
-    expect(list[0]).toEqual({ id: newer.id, createdAt: newer.createdAt, total: 80, verdict: newer.verdict });
+    expect(list[0]).toEqual({
+      id: newer.id,
+      createdAt: newer.createdAt,
+      total: 80,
+      verdict: newer.verdict,
+      actionTitle: null,
+    });
     // @ts-expect-error list items are lightweight — no scorecard
     expect(list[0].scorecard).toBeUndefined();
   });
@@ -125,9 +155,9 @@ describe("listRecords", () => {
 describe("toTrend", () => {
   it("orders points oldest -> newest", () => {
     const items = [
-      { id: "c", createdAt: "2026-06-27T12:00:00.000Z", total: 80, verdict: "v" },
-      { id: "a", createdAt: "2026-06-27T10:00:00.000Z", total: 40, verdict: "v" },
-      { id: "b", createdAt: "2026-06-27T11:00:00.000Z", total: 61, verdict: "v" },
+      { id: "c", createdAt: "2026-06-27T12:00:00.000Z", total: 80, verdict: "v", actionTitle: null },
+      { id: "a", createdAt: "2026-06-27T10:00:00.000Z", total: 40, verdict: "v", actionTitle: null },
+      { id: "b", createdAt: "2026-06-27T11:00:00.000Z", total: 61, verdict: "v", actionTitle: "Fix the hook." },
     ];
     expect(toTrend(items).map((p) => p.total)).toEqual([40, 61, 80]);
   });

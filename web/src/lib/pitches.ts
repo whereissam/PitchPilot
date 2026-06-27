@@ -19,19 +19,35 @@ export type Scorecard = {
 
 export type TranscriptLine = { role: "founder" | "judge"; text: string };
 
+export type WeakestLine = { quote: string | null; why_weak: string; rewrite: string };
+
+export type Feedback = {
+  action_title: string;
+  what_landed: string | null;
+  critique: string;
+  lowest_metric: { name: string; score: number; reason: string };
+  weakest_line: WeakestLine;
+};
+
 export type PitchRecord = {
   version: 1;
   id: string;
   createdAt: string;
   total: number;
   verdict: string;
+  // Lifted from feedback so the list never parses the feedback object. Null when no feedback.
+  actionTitle: string | null;
   scorecard: Scorecard;
   transcript: TranscriptLine[];
   audioExt: string | null;
+  feedback: Feedback | null;
 };
 
-/** Lightweight shape the list/trend views read — never touches the scorecard schema. */
-export type PitchListItem = Pick<PitchRecord, "id" | "createdAt" | "total" | "verdict">;
+/** Lightweight shape the list/trend views read — never touches the scorecard/feedback schema. */
+export type PitchListItem = Pick<
+  PitchRecord,
+  "id" | "createdAt" | "total" | "verdict" | "actionTitle"
+>;
 
 // Filesystem-safe, lexicographically sortable id derived from an ISO timestamp.
 const ID_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/;
@@ -53,9 +69,10 @@ export function buildRecord(input: {
   scorecard: Scorecard;
   transcript?: TranscriptLine[];
   audioExt?: string | null;
+  feedback?: Feedback | null;
   date: Date;
 }): PitchRecord {
-  const { scorecard, transcript = [], audioExt = null, date } = input;
+  const { scorecard, transcript = [], audioExt = null, feedback = null, date } = input;
   if (!scorecard || typeof scorecard.total !== "number") {
     throw new Error("buildRecord: a scorecard with a numeric total is required");
   }
@@ -65,9 +82,11 @@ export function buildRecord(input: {
     createdAt: date.toISOString(),
     total: scorecard.total,
     verdict: scorecard.verdict,
+    actionTitle: feedback?.action_title ?? null,
     scorecard,
     transcript,
     audioExt,
+    feedback,
   };
 }
 
@@ -113,7 +132,13 @@ export async function listRecords(baseDir: string): Promise<PitchListItem[]> {
     if (!f.endsWith(".json")) continue;
     try {
       const r = JSON.parse(await readFile(join(baseDir, f), "utf-8")) as PitchRecord;
-      items.push({ id: r.id, createdAt: r.createdAt, total: r.total, verdict: r.verdict });
+      items.push({
+        id: r.id,
+        createdAt: r.createdAt,
+        total: r.total,
+        verdict: r.verdict,
+        actionTitle: r.actionTitle ?? null,
+      });
     } catch {
       console.warn(`[pitches] skipping unreadable record: ${f}`);
     }

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Scoreboard } from "../components/Scoreboard";
+import { FeedbackPanel } from "../components/FeedbackPanel";
 import type { PitchRecord } from "../lib/pitches";
 
 export const Route = createFileRoute("/history/$id")({ component: Detail });
@@ -53,6 +54,8 @@ function Detail() {
           </div>
 
           <Scoreboard card={record.scorecard} />
+
+          {record.feedback && <FeedbackPanel feedback={record.feedback} />}
 
           {record.audioExt && (
             <div className="border-b-2 border-ink px-6 py-6 md:px-10">

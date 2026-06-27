@@ -6,6 +6,7 @@ import {
   pitchesDir,
   type Scorecard,
   type TranscriptLine,
+  type Feedback,
 } from "../lib/pitches";
 
 // audio/webm -> "webm"; falls back to webm. Sanitized so it can never escape a path.
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/api/pitches")({
       POST: async ({ request }) => {
         let scorecard: Scorecard | undefined;
         let transcript: TranscriptLine[] = [];
+        let feedback: Feedback | null = null;
         let audioBytes: Uint8Array | undefined;
         let audioExt: string | null = null;
 
@@ -37,6 +39,7 @@ export const Route = createFileRoute("/api/pitches")({
             const parsed = JSON.parse(meta);
             scorecard = parsed.scorecard;
             if (Array.isArray(parsed.transcript)) transcript = parsed.transcript;
+            if (parsed.feedback && typeof parsed.feedback === "object") feedback = parsed.feedback;
           }
           const audio = form.get("audio");
           if (audio && typeof audio !== "string" && audio.size > 0) {
@@ -51,7 +54,7 @@ export const Route = createFileRoute("/api/pitches")({
           return Response.json({ error: "A scorecard is required" }, { status: 400 });
         }
 
-        const record = buildRecord({ scorecard, transcript, audioExt, date: new Date() });
+        const record = buildRecord({ scorecard, transcript, feedback, audioExt, date: new Date() });
         await writeRecord(pitchesDir(), record, audioBytes);
         return Response.json({ id: record.id, createdAt: record.createdAt }, { status: 201 });
       },

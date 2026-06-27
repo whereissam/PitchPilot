@@ -104,7 +104,9 @@ function History() {
                     <span className="font-body text-sm text-ink/60">
                       {new Date(it.createdAt).toLocaleString()}
                     </span>
-                    <span className="font-body text-sm text-ink/80">{it.verdict}</span>
+                    <span className="font-body text-sm text-ink/80">
+                      {it.actionTitle ?? it.verdict}
+                    </span>
                     <span className="font-display text-2xl leading-none tracking-tight">
                       {it.total}
                       <span className="font-body text-xs align-top text-ink/40"> /100</span>

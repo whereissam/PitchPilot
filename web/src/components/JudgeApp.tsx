@@ -10,14 +10,18 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Scoreboard, type Card } from "./Scoreboard";
-import type { TranscriptLine } from "../lib/pitches";
+import { FeedbackPanel } from "./FeedbackPanel";
+import type { TranscriptLine, Feedback } from "../lib/pitches";
 
 type Conn = { token: string; url: string };
 
 // The full scorecard payload the agent publishes (Scoreboard only reads the Card subset).
 type FullCard = Card & { verdict: string; total: number };
 
-type SaveState = "idle" | "saving" | "ok" | "fail";
+type SaveState = "idle" | "writing" | "saving" | "ok" | "ok_nocrit" | "fail";
+
+// How long to wait for the (best-effort) feedback topic before saving without it.
+const FEEDBACK_GRACE_MS = 5000;
 
 // realtime agent state -> the giant scoreboard word
 function liveWord(state: string): { word: string; sub: string; hot: boolean } {
@@ -81,10 +85,12 @@ function LiveStage() {
 function Stage() {
   const room = useRoomContext();
   const [card, setCard] = useState<FullCard | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [saved, setSaved] = useState<SaveState>("idle");
 
-  // Best-effort artifacts: a missing transcript or audio must never block the save.
+  // Best-effort artifacts: a missing transcript, audio, or feedback must never block the save.
   const transcriptRef = useRef<TranscriptLine[]>([]);
+  const feedbackRef = useRef<Feedback | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const savedOnceRef = useRef(false);
@@ -123,19 +129,48 @@ function Stage() {
     }
   });
 
+  useDataChannel("feedback", (msg) => {
+    try {
+      const fb = JSON.parse(new TextDecoder().decode(msg.payload)) as Feedback;
+      feedbackRef.current = fb;
+      setFeedback(fb); // render the panel live as soon as it lands
+    } catch {
+      /* malformed feedback — it's best-effort, ignore */
+    }
+  });
+
   useDataChannel("scorecard", (msg) => {
     try {
       const full = JSON.parse(new TextDecoder().decode(msg.payload)) as FullCard;
-      setCard(full);
-      void savePitch(full);
+      setCard(full); // render the verdict immediately — never wait on feedback
+      void handleVerdict(full);
     } catch {
       /* malformed payload — voice still delivers the verdict */
     }
   });
 
-  async function savePitch(scorecard: FullCard) {
+  // Feedback is a 2nd LLM call, so it lands a beat after the scorecard. Wait briefly for it,
+  // then save with whatever arrived (or null). The scorecard never waits on feedback.
+  function waitForFeedback(ms: number): Promise<Feedback | null> {
+    return new Promise((resolve) => {
+      const start = performance.now();
+      const tick = () => {
+        if (feedbackRef.current || performance.now() - start >= ms) resolve(feedbackRef.current);
+        else setTimeout(tick, 150);
+      };
+      tick();
+    });
+  }
+
+  async function handleVerdict(scorecard: FullCard) {
     if (savedOnceRef.current) return; // verdict fires once; guard against double-publish
     savedOnceRef.current = true;
+    setSaved("writing");
+    const fb = await waitForFeedback(FEEDBACK_GRACE_MS);
+    await savePitch(scorecard, fb);
+  }
+
+  async function savePitch(scorecard: FullCard, fb: Feedback | null) {
     setSaved("saving");
 
     let audioBlob: Blob | null = null;
@@ -154,10 +189,13 @@ function Stage() {
 
     try {
       const fd = new FormData();
-      fd.append("meta", JSON.stringify({ scorecard, transcript: transcriptRef.current }));
+      fd.append(
+        "meta",
+        JSON.stringify({ scorecard, transcript: transcriptRef.current, feedback: fb }),
+      );
       if (audioBlob) fd.append("audio", audioBlob, "pitch.webm");
       const res = await fetch("/api/pitches", { method: "POST", body: fd });
-      setSaved(res.ok ? "ok" : "fail");
+      setSaved(res.ok ? (fb ? "ok" : "ok_nocrit") : "fail");
     } catch {
       setSaved("fail");
     }
@@ -186,7 +224,16 @@ function Stage() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col">{card ? <Scoreboard card={card} /> : <LiveStage />}</main>
+      <main className="flex flex-1 flex-col">
+        {card ? (
+          <>
+            <Scoreboard card={card} />
+            {feedback && <FeedbackPanel feedback={feedback} />}
+          </>
+        ) : (
+          <LiveStage />
+        )}
+      </main>
 
       <footer className="flex items-center justify-between border-t-2 border-ink px-6 py-4 md:px-10">
         <span className="font-body text-xs tracking-[0.18em] text-ink/45">
@@ -208,18 +255,23 @@ function Stage() {
 
 function SavedMarker({ state }: { state: SaveState }) {
   if (state === "idle") return null;
-  const text =
-    state === "saving"
-      ? "SAVING…"
-      : state === "ok"
-        ? "SAVED ✓"
-        : "NOT SAVED";
   const tone = state === "fail" ? "text-acid" : "text-ink/55";
+  const isSaved = state === "ok" || state === "ok_nocrit";
+  const text =
+    state === "writing"
+      ? "WRITING CRITIQUE…"
+      : state === "saving"
+        ? "SAVING…"
+        : state === "ok"
+          ? "SAVED ✓ · VIEW HISTORY"
+          : state === "ok_nocrit"
+            ? "SAVED · NO CRITIQUE"
+            : "NOT SAVED";
   return (
     <span className={`font-body text-xs font-bold tracking-[0.18em] ${tone}`}>
-      {state === "ok" ? (
+      {isSaved ? (
         <Link to="/history" className="hover:text-acid">
-          {text} · VIEW HISTORY
+          {text}
         </Link>
       ) : (
         text

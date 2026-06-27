@@ -8,6 +8,7 @@ from livekit.agents import Agent, AgentSession
 from livekit.plugins import openai
 from openai.types.beta.realtime.session import InputAudioNoiseReduction, TurnDetection
 
+from feedback import lowest_metric, write_feedback
 from prompts import JUDGE_INSTRUCTIONS
 from scoring import Scorecard, score_pitch
 
@@ -93,7 +94,25 @@ async def entrypoint(ctx: agents.JobContext):
                 )
             except Exception:
                 logger.warning("transcript publish failed", exc_info=True)
-            await session.generate_reply(instructions=_read_card_instructions(card))
+
+            # Voice reads the verdict while we write the critique concurrently, so the
+            # feedback lands within the browser's save window instead of after the speech.
+            reply_task = asyncio.create_task(
+                session.generate_reply(instructions=_read_card_instructions(card))
+            )
+            try:
+                fb = await asyncio.to_thread(write_feedback, pitch, card)
+                if fb is not None:
+                    name, score = lowest_metric(card)
+                    await ctx.room.local_participant.publish_data(
+                        json.dumps(fb.payload(name, score)).encode("utf-8"),
+                        reliable=True,
+                        topic="feedback",
+                    )
+                    logger.info("published feedback: %s", fb.action_title)
+            except Exception:
+                logger.warning("feedback publish failed", exc_info=True)
+            await reply_task
         except Exception:
             logger.exception("scorecard publish failed")
 
