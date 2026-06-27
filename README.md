@@ -6,7 +6,7 @@
 
 <p align="center">
   Realtime voice. It barges in the second your pitch goes weak.<br />
-  Say <b>“score me”</b> and it hands back a scorecard against the hackathon rubric.
+  Say <b>“score me”</b> and it hands back a scorecard against the rubric.
 </p>
 
 <p align="center">
@@ -18,16 +18,15 @@
 
 <p align="center">
   <a href="docs/pitch-deck.html"><b>📊 Pitch deck</b></a> &nbsp;·&nbsp;
-  <a href="#try-it"><b>▶︎ Run it</b></a> &nbsp;·&nbsp;
-  <i>Built for the LiveKit + Telli hackathon</i>
+  <a href="#try-it"><b>▶︎ Run it</b></a>
 </p>
 
 ---
 
 ## Bad demos don't fail at the end. They fail in the first 20 seconds.
 
-Hackathon teams don't usually lose because the idea is impossible. They lose because the
-pitch sounds bad early — and nobody tells them until the Q&A goes quiet.
+Most teams don't lose because the idea is impossible. They lose because the pitch sounds bad
+early — and nobody tells them until the Q&A goes quiet.
 
 PitchPilot is the practice judge that *does* tell you, out loud, mid-sentence:
 
@@ -41,7 +40,7 @@ no demo moment · no benchmark · jargon dumping** — and cuts in on the first 
 
 ## Say “score me”
 
-When you're done, you get a verdict against the official rubric — spoken aloud **and** on screen,
+When you're done, you get a verdict against the rubric — spoken aloud **and** on screen,
 always the same numbers:
 
 ```
@@ -144,4 +143,4 @@ OPENAI_API_KEY=sk-... python -m pytest test_scoring.py -v
 - 📝 [Design notes](docs/superpowers/specs/2026-06-27-judgemode-design.md) · [Build plan](docs/superpowers/plans/2026-06-27-judgemode.md)
 - 🔧 [How to run & what breaks](docs/usage.md) · [Done / left to do](docs/todo.md)
 
-<p align="center"><sub>Built for the LiveKit + Telli hackathon · rubric: Idea 50 / Execution 50</sub></p>
+<p align="center"><sub>Practice the pitch. Get interrupted. Fix it before it counts.</sub></p>
