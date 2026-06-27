@@ -90,6 +90,28 @@ Left to do:
       `FEEDBACK_GRACE_MS` or drop `SCORER_MODEL`/the feedback call to `gpt-4o-mini`. Feedback is
       best-effort — a `feedback: null` save is still valid.
 
+## Demo stability harness (built — needs the 5-run rehearsal)
+
+Rehearsal doc: [`demo-rehearsal.md`](demo-rehearsal.md). One question only: does the demo
+path survive? Split into an automated preflight (plumbing) + a manual 5-run voice rehearsal
+(behavior). No Langfuse/Phoenix yet — make these two gates green first.
+
+- [x] **Preflight** — `scripts/stability_check.py`: one command, exits 0/1. Loads `agent/.env` +
+      `web/.env` (no dep), runs scoring/feedback fixtures on `agent/.venv`. Checks LiveKit env,
+      OpenAI key (warn), web server, `/api/token`, `score_pitch`, `write_feedback`, data dir
+      writable. ✅ 7/7 green against a dev server.
+- [x] **Rehearsal doc** — `docs/demo-rehearsal.md`: 5-run pass criteria + score rubric
+      (5/5 freeze · 4/5 polish-only · 3/5 fix-core).
+- [x] **In-UI demo-health pills** — `JudgeApp.tsx` strip: ROOM / MIC / AGENT / HEARD / SCORE /
+      SAVE, derived from live LiveKit state; each maps to a rehearsal checkbox. tsc + 14/14 tests
+      clean. MIC flags `fail` when connected but not publishing.
+
+Left to do:
+
+- [ ] **Run the 5x voice rehearsal (human-only):** `python scripts/stability_check.py` must pass,
+      then run the same pitch 5 times per `docs/demo-rehearsal.md` and record the score. Confirm
+      the health pills populate during a live session (only verifiable in a real room).
+
 ## Stretch (only if V0 lands with time to spare)
 
 - [ ] Telli "judge calls your phone" via SIP — bonus-prize bait. Do NOT start until V0 is demo-ready.

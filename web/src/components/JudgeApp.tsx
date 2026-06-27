@@ -7,6 +7,8 @@ import {
   useVoiceAssistant,
   useDataChannel,
   useRoomContext,
+  useConnectionState,
+  useLocalParticipant,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Scoreboard, type Card } from "./Scoreboard";
@@ -87,6 +89,9 @@ function Stage() {
   const [card, setCard] = useState<FullCard | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [saved, setSaved] = useState<SaveState>("idle");
+  // Demo-health signal: the agent's STT produced at least one transcript line,
+  // i.e. it actually heard the founder. Drives the HEARD pill.
+  const [heard, setHeard] = useState(false);
 
   // Best-effort artifacts: a missing transcript, audio, or feedback must never block the save.
   const transcriptRef = useRef<TranscriptLine[]>([]);
@@ -123,7 +128,9 @@ function Stage() {
 
   useDataChannel("transcript", (msg) => {
     try {
-      transcriptRef.current = JSON.parse(new TextDecoder().decode(msg.payload)) as TranscriptLine[];
+      const lines = JSON.parse(new TextDecoder().decode(msg.payload)) as TranscriptLine[];
+      transcriptRef.current = lines;
+      if (lines.length) setHeard(true); // first transcript = the agent heard the founder
     } catch {
       /* keep whatever we had — transcript is optional */
     }
@@ -235,6 +242,13 @@ function Stage() {
         )}
       </main>
 
+      <div className="flex items-center justify-between gap-3 border-t-2 border-ink px-6 py-2 md:px-10">
+        <DemoHealth heard={heard} scored={!!card} save={saved} />
+        <span className="hidden font-body text-[0.6rem] font-bold tracking-[0.22em] text-ink/30 sm:block">
+          DEMO HEALTH
+        </span>
+      </div>
+
       <footer className="flex items-center justify-between border-t-2 border-ink px-6 py-4 md:px-10">
         <span className="font-body text-xs tracking-[0.18em] text-ink/45">
           {card ? "VERDICT DELIVERED" : "LIVE — ROOM: JUDGEMODE"}
@@ -249,6 +263,80 @@ function Stage() {
           </button>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// A live operator panel for rehearsal: each pill maps to a checkbox in
+// docs/demo-rehearsal.md, so when a run fails you can see *where* at a glance.
+type PillStatus = "ok" | "pending" | "off" | "fail";
+
+function HealthPill({ label, status, detail }: { label: string; status: PillStatus; detail: string }) {
+  const dot =
+    status === "ok"
+      ? "bg-acid"
+      : status === "fail"
+        ? "bg-acid blink"
+        : status === "pending"
+          ? "bg-ink/40 blink"
+          : "bg-ink/20";
+  const box = status === "fail" ? "border-acid text-acid" : "border-ink/25 text-ink/60";
+  return (
+    <span
+      title={detail}
+      className={`flex items-center gap-1.5 border ${box} px-2 py-1 leading-none`}
+    >
+      <span className={`h-1.5 w-1.5 shrink-0 ${dot}`} />
+      <span className="font-body text-[0.6rem] font-bold tracking-[0.18em]">{label}</span>
+    </span>
+  );
+}
+
+function DemoHealth({ heard, scored, save }: { heard: boolean; scored: boolean; save: SaveState }) {
+  const conn = useConnectionState();
+  const { isMicrophoneEnabled } = useLocalParticipant();
+  const { agent } = useVoiceAssistant();
+  const connected = conn === "connected";
+
+  const room: PillStatus = connected
+    ? "ok"
+    : conn === "connecting" || conn === "reconnecting"
+      ? "pending"
+      : "off";
+  // Connected but no mic publishing is a real demo-killer — flag it loud, not idle.
+  const mic: PillStatus = isMicrophoneEnabled ? "ok" : connected ? "fail" : "off";
+  const agentStatus: PillStatus = agent ? "ok" : connected ? "pending" : "off";
+  const heardStatus: PillStatus = heard ? "ok" : agent ? "pending" : "off";
+  const scoreStatus: PillStatus = scored ? "ok" : "pending";
+  const saveStatus: PillStatus =
+    save === "ok" || save === "ok_nocrit"
+      ? "ok"
+      : save === "fail"
+        ? "fail"
+        : save === "saving" || save === "writing"
+          ? "pending"
+          : "off";
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" aria-label="demo health">
+      <HealthPill label="ROOM" status={room} detail={`Room: ${conn}`} />
+      <HealthPill label="MIC" status={mic} detail={isMicrophoneEnabled ? "Mic: live" : "Mic: off"} />
+      <HealthPill
+        label="AGENT"
+        status={agentStatus}
+        detail={agent ? "Agent: in room" : "Agent: not joined"}
+      />
+      <HealthPill
+        label="HEARD"
+        status={heardStatus}
+        detail={heard ? "Agent heard the founder" : "No transcript yet"}
+      />
+      <HealthPill
+        label="SCORE"
+        status={scoreStatus}
+        detail={scored ? "Scorecard received" : "No scorecard yet"}
+      />
+      <HealthPill label="SAVE" status={saveStatus} detail={`Save: ${save}`} />
     </div>
   );
 }
