@@ -126,7 +126,7 @@ function LiveStage() {
       <div>
         <p
           key={word}
-          className={`rise font-display text-[clamp(3.5rem,16vw,12rem)] leading-[0.82] tracking-tight ${
+          className={`rise font-display text-[clamp(3.5rem,16vw,12rem)] leading-none tracking-tight ${
             hot ? "text-acid" : "text-ink"
           }`}
         >
@@ -204,7 +204,7 @@ export default function JudgeApp() {
         </div>
 
         <div>
-          <h1 className="font-display text-[clamp(3.5rem,15vw,12rem)] leading-[0.82] tracking-tight">
+          <h1 className="font-display text-[clamp(3.5rem,15vw,12rem)] leading-none tracking-tight">
             PITCH
             <br />
             PILOT
