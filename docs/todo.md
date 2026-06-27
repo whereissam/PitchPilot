@@ -10,9 +10,9 @@ Plan: [`superpowers/plans/2026-06-27-judgemode.md`](superpowers/plans/2026-06-27
 - [x] **Task 2 — Frontend (V0 complete)** — TanStack Start app, `/api/token` server route, mic connect.
       `web/src/routes/api.token.ts`, `web/src/components/JudgeApp.tsx`, `web/src/routes/index.tsx`. ✅ reviewed.
 - [x] **Task 3 — `score_pitch()` + benchmark test (V2)** — `agent/scoring.py`, `agent/test_scoring.py`. ✅ reviewed.
-- [ ] **Task 4 — Agent publishes scorecard JSON on data channel (V1)** — capture transcript, on
+- [x] **Task 4 — Agent publishes scorecard JSON on data channel (V1)** — capture transcript, on
       "score me" run `score_pitch()` and `publish_data(topic="scorecard")`. Modifies `agent/main.py`.
-- [ ] **Task 5 — Frontend scorecard panel (V1 complete)** — `Scorecard` component + `useDataChannel`
+- [x] **Task 5 — Frontend scorecard panel (V1 complete)** — `Scorecard` component + `useDataChannel`
       in `web/src/components/JudgeApp.tsx`.
 
 ## Human-only steps (cannot be automated)
