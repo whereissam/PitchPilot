@@ -112,6 +112,81 @@ Left to do:
       then run the same pitch 5 times per `docs/demo-rehearsal.md` and record the score. Confirm
       the health pills populate during a live session (only verifiable in a real room).
 
+## Showmanship / personality features (proposed — not built)
+
+Goal: lean into PitchPilot's personality — it's not a reviewer, it's a **cruel judge that
+barges in**. These are stage-effect features that make judges laugh + remember it. Demo > product.
+Most are prompt variants or UI wrappers over data we already publish (scorecard, `weakest_line`,
+barge-in events, history). Keep the brutal copy **sharp, funny, not cruel**.
+
+### Tier 1 — recommended now (low cost, high stage payoff)
+
+- [x] **1. Brutal Mode toggle** — BUILT (needs live voice test). `[ FAIR ] [ BRUTAL ]` switch on the
+      start screen, an INTENSITY axis orthogonal to persona (composes with all four). Brutal is more
+      savage + funny but still constructive, with a hard no-cruelty floor and the SAME honest
+      scorecard ("Stop. You're reading your package.json." / "Cool stack. Who asked for it?").
+      Wiring: `_BRUTAL_OVERLAY` layers last (most salient) in `agent/prompts.py`
+      (`instructions_for(persona, brutal)` / `intro_for(persona, brutal)`); metadata is now JSON
+      `{persona, brutal}` — `api.token.ts` reads `&brutal=1`, agent parses via `_parse_meta()`
+      (tolerates legacy bare slug + junk). UI: FAIR/BRUTAL toggle + live-header BRUTAL badge in
+      `JudgeApp.tsx`. tsc + build + 14/14 tests + prompt/parser asserts clean. Demo line: "Let's
+      turn on Brutal Mode." Live test: toggle Brutal, confirm sharper cut-ins, no personal attacks.
+- [x] **2. Pitch Killcam** — BUILT. `web/src/components/Killcam.tsx`: a dark, cinematic frame (the
+      dead line struck through in acid, the rewrite glowing) shown between the Scoreboard and the
+      FeedbackPanel, live and on `/history/$id`. Pure UI over the `weakest_line` (quote + rewrite)
+      already on the `feedback` topic — zero backend change. Handles the null-quote case as "the
+      pattern that cost you". To avoid duplication, the small WEAKEST LINE section was removed from
+      `FeedbackPanel` (Killcam owns that spotlight now). tsc + build + 14/14 tests clean.
+- [x] **3. Objection! / Red Flag cut-in** — BUILT (needs live voice test). Every mid-pitch judge
+      interruption flashes a full-screen `OBJECTION` + the actual judge line + `RED FLAG #n`, with a
+      running 🚩 tally in the header. Signal: the agent publishes each live judge utterance on a new
+      `cutin` topic, but only mid-pitch — it skips the greeting (no founder speech yet) and the
+      verdict reading (`scored` already set), so only real barge-ins flash. `ObjectionOverlay` +
+      `objection` keyframe (punch-in / hold / fade, 1.8s auto-dismiss, pointer-events-none).
+      No SFX yet (visual-only, per the UI-fallback note). tsc + build + 14/14 tests clean.
+      Live test: pitch badly, confirm each cut-in flashes once and the 🚩 count climbs.
+
+### Tier 2 — fun, more work (do only if Tier 1 lands)
+
+- [x] **4. Judge persona picker** — BUILT (needs live voice test). 4 personas the founder picks
+      before connecting: **PitchPilot** (balanced, default), **YC Partner** (pain/wedge/why-now —
+      "Too vague. Who is desperate for this?"), **Hackathon Judge** (demo/depth/rubric — "Where's
+      the live moment?"), **Angry Engineer** (feasibility/latency/architecture — "That sounds like
+      a prompt, not a system."). Wiring: shared rulebook + per-persona lens in `agent/prompts.py`
+      (`instructions_for`/`intro_for`); slug flows start-screen picker → `?persona=` →
+      `api.token.ts` stamps participant **metadata** → agent reads it via `wait_for_participant()`
+      and builds that prompt + intro. Picker UI + live-header badge in `JudgeApp.tsx`. tsc + build +
+      14/14 tests clean. Still composes cleanly with a future Brutal toggle (orthogonal axis).
+      Live test: pick each judge, confirm the greeting + interruptions match the persona.
+- [ ] **5. Red Flag counter + Pitch Damage meter** — running tally of barge-ins (`RED FLAG #1`) and a
+      `Pitch Damage: ███████░░░ 70%` meter that rises on jargon-dumping, falls on correction. Makes
+      the demo feel like a game.
+- [ ] **6. Pitch HP / Boss-fight UI** — frame the pitch as a boss fight: `PITCH HP: 100 / JUDGE
+      PATIENCE: 100`, deltas on the fly (`-20 Judge Patience: stack before pain` / `+15 Clarity`),
+      `VERDICT: survived Q&A`. Reinforces "pitch is a realtime performance, not an essay." (Likely
+      supersedes #5 — pick one HP/meter treatment, don't ship both.)
+- [ ] **7. Score reveal animation** — after "score me", reveal line-by-line over 1–2s
+      (`Problem clarity: detected / Why voice: weak / … TOTAL: 74/100`) instead of instant. Game-show
+      rhythm. Pure frontend over the scorecard we already get.
+- [ ] **8. "Try Again" rewrite challenge** — post-scorecard button `TRY AGAIN WITH THIS OPENING`
+      shows a stronger opening to read; second run's score trends up. Completes the practice-loop
+      story (bad pitch → 65 → rewrite → 82 → history trend). Leans on the existing history feature.
+- [ ] **9. Hall of Shame / Hall of Fame** — split the `/history` page: lowest-score pitch + its worst
+      line vs. highest-score pitch + its best opening. Makes history more than a list. Uses saved
+      scorecards we already store.
+
+### Tier 3 — lower priority (dilutes the core)
+
+- [ ] **10. Audience judge mode** — local fake poll (`Would you fund this pitch? [ YES ] [ NO ]
+      [ NEEDS DEMO ]`). Fun for a live room but pulls focus off PitchPilot's core; only if time.
+
+### Best-version demo flow (target)
+
+"Most pitch tools are polite. Judges aren't." → turn on Brutal Mode → say "We use LiveKit, OpenAI
+realtime, TanStack…" → `OBJECTION: Implementation before problem` flashes, judge: "Stop. You're
+reading your package.json." → correct it → "Better. Now why voice?" → "Score me." → `TOTAL 78/100` +
+`KILLCAM` (weakest line + rewrite) → history trend `Run 1: 38 → Run 2: 78`.
+
 ## Stretch (only if V0 lands with time to spare)
 
 - [ ] Telli "judge calls your phone" via SIP — bonus-prize bait. Do NOT start until V0 is demo-ready.

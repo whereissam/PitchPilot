@@ -68,6 +68,31 @@ body {
   animation: rise 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* OBJECTION cut-in: punch in, hold, fade out over its lifetime */
+@keyframes objection {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-2deg);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.06) rotate(-2deg);
+  }
+  16% {
+    transform: scale(1) rotate(-2deg);
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(-2deg);
+  }
+}
+.objection {
+  animation: objection 1800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* tint the LiveKit voice visualizer bars to ink */
 .pp-viz {
   --lk-fg: var(--color-ink);

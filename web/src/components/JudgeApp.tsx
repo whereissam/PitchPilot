@@ -13,9 +13,20 @@ import {
 import "@livekit/components-styles";
 import { Scoreboard, type Card } from "./Scoreboard";
 import { FeedbackPanel } from "./FeedbackPanel";
+import { Killcam } from "./Killcam";
 import type { TranscriptLine, Feedback } from "../lib/pitches";
 
 type Conn = { token: string; url: string };
+
+// Judge personas — keep keys in sync with agent/prompts.py + api.token.ts. Each is a prompt
+// variant over the same scoring engine; the founder picks one before connecting.
+type Persona = { key: string; name: string; tag: string; line: string };
+const PERSONAS: Persona[] = [
+  { key: "pitchpilot", name: "PITCHPILOT", tag: "BALANCED", line: "Sharp but fair. The all-rounder." },
+  { key: "yc", name: "YC PARTNER", tag: "PAIN & WEDGE", line: "“Who is desperate for this?”" },
+  { key: "hackathon", name: "HACKATHON JUDGE", tag: "DEMO & DEPTH", line: "“Where’s the live moment?”" },
+  { key: "engineer", name: "ANGRY ENGINEER", tag: "FEASIBILITY", line: "“That’s a prompt, not a system.”" },
+];
 
 // The full scorecard payload the agent publishes (Scoreboard only reads the Card subset).
 type FullCard = Card & { verdict: string; total: number };
@@ -84,7 +95,32 @@ function LiveStage() {
   );
 }
 
-function Stage() {
+// A barge-in cut-in flashed full-screen: the actual judge line + its red-flag number.
+type Objection = { text: string; n: number; key: number };
+
+function ObjectionOverlay({ objection }: { objection: Objection | null }) {
+  if (!objection) return null;
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-6">
+      <div
+        key={objection.key}
+        className="objection flex w-full max-w-3xl flex-col items-center gap-4 text-center"
+      >
+        <span className="bg-acid px-3 py-1 font-body text-xs font-bold tracking-[0.3em] text-ink">
+          RED FLAG #{objection.n}
+        </span>
+        <p className="font-display text-[clamp(3rem,13vw,9rem)] leading-[0.85] tracking-tight text-acid drop-shadow-[0_5px_0_rgba(20,20,20,0.92)]">
+          OBJECTION
+        </p>
+        <p className="max-w-2xl bg-ink px-4 py-2 font-display text-[clamp(1.2rem,3.6vw,2.3rem)] leading-tight tracking-tight text-bone">
+          “{objection.text}”
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Stage({ personaName, brutal }: { personaName: string; brutal: boolean }) {
   const room = useRoomContext();
   const [card, setCard] = useState<FullCard | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -92,6 +128,11 @@ function Stage() {
   // Demo-health signal: the agent's STT produced at least one transcript line,
   // i.e. it actually heard the founder. Drives the HEARD pill.
   const [heard, setHeard] = useState(false);
+  // OBJECTION cut-ins: the live flash + a running red-flag tally in the header.
+  const [objection, setObjection] = useState<Objection | null>(null);
+  const [redFlags, setRedFlags] = useState(0);
+  const objTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const objKey = useRef(0);
 
   // Best-effort artifacts: a missing transcript, audio, or feedback must never block the save.
   const transcriptRef = useRef<TranscriptLine[]>([]);
@@ -145,6 +186,24 @@ function Stage() {
       /* malformed feedback — it's best-effort, ignore */
     }
   });
+
+  useDataChannel("cutin", (msg) => {
+    try {
+      const { text, n } = JSON.parse(new TextDecoder().decode(msg.payload)) as {
+        text: string;
+        n: number;
+      };
+      objKey.current += 1;
+      setObjection({ text, n, key: objKey.current });
+      setRedFlags(n);
+      if (objTimer.current) clearTimeout(objTimer.current);
+      objTimer.current = setTimeout(() => setObjection(null), 1800);
+    } catch {
+      /* malformed cut-in — it's best-effort showmanship, ignore */
+    }
+  });
+
+  useEffect(() => () => void (objTimer.current && clearTimeout(objTimer.current)), []);
 
   useDataChannel("scorecard", (msg) => {
     try {
@@ -210,6 +269,7 @@ function Stage() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <ObjectionOverlay objection={objection} />
       <header className="flex items-center justify-between border-b-2 border-ink px-6 py-4 md:px-10">
         <div className="flex items-center gap-3">
           <img src="/logo.svg" alt="" className="h-8 w-8 md:h-9 md:w-9" />
@@ -217,10 +277,26 @@ function Stage() {
             PITCHPILOT
           </span>
           <span className="font-body text-[0.7rem] font-bold tracking-[0.28em] text-acid">
-            VOICE JUDGE
+            {personaName}
           </span>
+          {brutal && (
+            <span className="border border-acid bg-acid px-1.5 py-0.5 font-body text-[0.6rem] font-bold tracking-[0.22em] text-ink">
+              BRUTAL
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
+          {redFlags > 0 && (
+            <span
+              title={`${redFlags} red flag${redFlags === 1 ? "" : "s"} so far`}
+              className="flex items-center gap-1.5 border-2 border-acid bg-acid/10 px-2.5 py-1.5 leading-none"
+            >
+              <span className="text-sm">🚩</span>
+              <span className="font-display text-lg leading-none tracking-wide text-ink">
+                {redFlags}
+              </span>
+            </span>
+          )}
           <Link
             to="/history"
             className="font-body text-xs font-bold tracking-[0.18em] text-ink/55 underline-offset-4 hover:text-acid hover:underline"
@@ -235,6 +311,7 @@ function Stage() {
         {card ? (
           <>
             <Scoreboard card={card} />
+            {feedback && <Killcam weakestLine={feedback.weakest_line} />}
             {feedback && <FeedbackPanel feedback={feedback} />}
           </>
         ) : (
@@ -368,9 +445,97 @@ function SavedMarker({ state }: { state: SaveState }) {
   );
 }
 
+function PersonaPicker({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-3 font-body text-xs font-bold tracking-[0.28em] text-ink/55">
+        PICK YOUR JUDGE
+      </p>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        {PERSONAS.map((p) => {
+          const active = p.key === selected;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onSelect(p.key)}
+              className={`flex flex-col gap-1 border-2 p-3 text-left transition-colors ${
+                active ? "border-ink bg-ink text-bone" : "border-ink/25 bg-bone hover:border-ink"
+              }`}
+            >
+              <span className="font-display text-lg leading-none tracking-tight">{p.name}</span>
+              <span
+                className={`font-body text-[0.6rem] font-bold tracking-[0.18em] ${
+                  active ? "text-acid" : "text-ink/45"
+                }`}
+              >
+                {p.tag}
+              </span>
+              <span
+                className={`font-body text-xs leading-snug ${active ? "text-bone/70" : "text-ink/55"}`}
+              >
+                {p.line}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function IntensityToggle({
+  brutal,
+  onChange,
+}: {
+  brutal: boolean;
+  onChange: (brutal: boolean) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-3 font-body text-xs font-bold tracking-[0.28em] text-ink/55">INTENSITY</p>
+      <div className="inline-flex border-2 border-ink">
+        <button
+          type="button"
+          aria-pressed={!brutal}
+          onClick={() => onChange(false)}
+          className={`px-5 py-2 font-display text-xl tracking-wide transition-colors ${
+            !brutal ? "bg-ink text-bone" : "bg-bone text-ink hover:bg-ink/5"
+          }`}
+        >
+          FAIR
+        </button>
+        <button
+          type="button"
+          aria-pressed={brutal}
+          onClick={() => onChange(true)}
+          className={`border-l-2 border-ink px-5 py-2 font-display text-xl tracking-wide transition-colors ${
+            brutal ? "bg-acid text-ink" : "bg-bone text-ink hover:bg-ink/5"
+          }`}
+        >
+          BRUTAL
+        </button>
+      </div>
+      <p className="mt-2 font-body text-xs text-ink/55">
+        {brutal ? "No mercy. Same honest score." : "Sharp, but constructive."}
+      </p>
+    </div>
+  );
+}
+
 export default function JudgeApp() {
   const [conn, setConn] = useState<Conn | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [persona, setPersona] = useState<string>(PERSONAS[0].key);
+  const [brutal, setBrutal] = useState(false);
+  const personaName = PERSONAS.find((p) => p.key === persona)?.name ?? PERSONAS[0].name;
 
   if (!conn) {
     return (
@@ -403,12 +568,16 @@ export default function JudgeApp() {
           </p>
         </div>
 
-        <div>
+        <div className="space-y-6">
+          <PersonaPicker selected={persona} onSelect={setPersona} />
+          <IntensityToggle brutal={brutal} onChange={setBrutal} />
           <button
             onClick={async () => {
               setErr(null);
               try {
-                const res = await fetch("/api/token");
+                const res = await fetch(
+                  `/api/token?persona=${encodeURIComponent(persona)}${brutal ? "&brutal=1" : ""}`,
+                );
                 if (!res.ok) {
                   setErr("Token error — create web/.env and restart `bun run dev`.");
                   return;
@@ -446,7 +615,7 @@ export default function JudgeApp() {
       onDisconnected={() => setConn(null)}
     >
       <RoomAudioRenderer />
-      <Stage />
+      <Stage personaName={personaName} brutal={brutal} />
     </LiveKitRoom>
   );
 }

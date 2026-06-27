@@ -12,8 +12,8 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 export function FeedbackPanel({ feedback }: { feedback: Feedback }) {
-  const { action_title, what_landed, critique, lowest_metric, weakest_line } = feedback;
-  const hasQuote = weakest_line.quote != null && weakest_line.quote.trim() !== "";
+  // weakest_line is intentionally not rendered here — the Killcam component owns that spotlight.
+  const { action_title, what_landed, critique, lowest_metric } = feedback;
 
   return (
     <section className="slam border-t-2 border-ink bg-bone">
@@ -39,38 +39,6 @@ export function FeedbackPanel({ feedback }: { feedback: Feedback }) {
 
       <Section label="CRITIQUE">
         <p className="max-w-3xl font-body text-base leading-relaxed text-ink/85">{critique}</p>
-      </Section>
-
-      <Section label="WEAKEST LINE">
-        {hasQuote ? (
-          <div className="flex flex-col gap-3">
-            <div>
-              <span className="font-body text-xs font-bold tracking-[0.18em] text-ink/45">BEFORE</span>
-              <p className="mt-1 border-l-2 border-ink/25 pl-3 font-body text-base italic text-ink/65">
-                “{weakest_line.quote}”
-              </p>
-              <p className="mt-1 font-body text-sm text-ink/50">{weakest_line.why_weak}</p>
-            </div>
-            <div>
-              <span className="font-body text-xs font-bold tracking-[0.18em] text-acid">AFTER</span>
-              <p className="mt-1 border-l-2 border-acid pl-3 font-body text-base text-ink">
-                “{weakest_line.rewrite}”
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <p className="font-body text-base text-ink/70">
-              <span className="font-bold text-ink">Weakest pattern:</span> {weakest_line.why_weak}
-            </p>
-            <div>
-              <span className="font-body text-xs font-bold tracking-[0.18em] text-acid">SAY INSTEAD</span>
-              <p className="mt-1 border-l-2 border-acid pl-3 font-body text-base text-ink">
-                “{weakest_line.rewrite}”
-              </p>
-            </div>
-          </div>
-        )}
       </Section>
     </section>
   );

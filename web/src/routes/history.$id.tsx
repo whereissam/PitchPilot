@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Scoreboard } from "../components/Scoreboard";
 import { FeedbackPanel } from "../components/FeedbackPanel";
+import { Killcam } from "../components/Killcam";
 import type { PitchRecord } from "../lib/pitches";
 
 export const Route = createFileRoute("/history/$id")({ component: Detail });
@@ -55,6 +56,7 @@ function Detail() {
 
           <Scoreboard card={record.scorecard} />
 
+          {record.feedback && <Killcam weakestLine={record.feedback.weakest_line} />}
           {record.feedback && <FeedbackPanel feedback={record.feedback} />}
 
           {record.audioExt && (
