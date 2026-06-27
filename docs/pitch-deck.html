@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PitchPilot — Pitch Deck</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ===========================================================
+     COBALT GRID — cobalt ink on warm cream, graph-paper canvas,
+     pixel-glitch stair decorations, hairline rules.
+     Faithful to zarazhangrui/beautiful-html-templates · cobalt-grid
+     =========================================================== */
+  :root {
+    --paper:    #F0EBDE;   /* warm cream / ivory paper canvas */
+    --paper-2:  #E6E0CE;
+    --ink:      #1F2BE0;   /* electric cobalt / royal blue */
+    --ink-soft: #5560E5;   /* lighter cobalt for secondary marks */
+    --grid:     rgba(31, 43, 224, 0.10);  /* very faint blue grid */
+    --rule:     #1F2BE0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #0a0a0a; }
+  body {
+    font-family: 'Hanken Grotesk', 'Helvetica Neue', sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  /* Deck wrapper — fills the viewport */
+  .deck { position: fixed; inset: 0; display: grid; place-items: center; }
+  .stage {
+    position: relative;
+    width: 100vw; height: 100vh; height: 100dvh;
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  /* Graph-paper grid behind every slide */
+  .stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size: clamp(28px, 2.2vw, 44px) clamp(28px, 2.2vw, 44px);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    opacity: 0; pointer-events: none;
+    transition: opacity 280ms ease;
+    z-index: 2;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ─── TYPE SYSTEM ──────────────────────────────────────────── */
+  .disp     { font-family: 'Newsreader', Georgia, serif; font-weight: 400; line-height: 0.92; letter-spacing: -0.005em; color: var(--ink); }
+  .body-tx  { font-family: 'Hanken Grotesk', sans-serif; font-weight: 400; line-height: 1.5; color: var(--ink); }
+  .micro    { font-family: 'Hanken Grotesk', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink); }
+  .mono     { font-family: 'DM Mono', ui-monospace, monospace; font-weight: 400; color: var(--ink); }
+
+  /* Page-number marker, shared across slides */
+  .pagenum {
+    position: absolute;
+    right: clamp(28px, 2.4vw, 48px);
+    bottom: clamp(48px, 4.8vh, 76px);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(11px, 0.82vw, 13px);
+    color: var(--ink); letter-spacing: 0.06em; z-index: 9;
+  }
+
+  /* Top + bottom slim hairlines framing each slide */
+  .hairlines::before,
+  .hairlines::after {
+    content: '';
+    position: absolute;
+    left: clamp(36px, 3.6vw, 80px);
+    right: clamp(36px, 3.6vw, 80px);
+    height: 1.5px; background: var(--ink);
+    z-index: 4; pointer-events: none;
+  }
+  .hairlines::before { top: clamp(28px, 2.6vh, 48px); }
+  .hairlines::after  { bottom: clamp(20px, 2vh, 32px); }
+
+  /* Fixed nav hint */
+  .nav-hint {
+    position: fixed;
+    left: clamp(36px, 3.6vw, 80px);
+    bottom: clamp(48px, 4.8vh, 76px);
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(10px, 0.75vw, 12px);
+    color: var(--ink); letter-spacing: 0.08em;
+    opacity: 0.4; z-index: 12; pointer-events: none;
+  }
+
+  /* ─── DECORATIVE: pixel-glitch stair ─────────────────────────── */
+  .pixel-glitch { position: absolute; pointer-events: none; z-index: 3; }
+  .pixel-glitch svg { display: block; width: 100%; height: 100%; }
+
+  /* ─── DECORATIVE: small QR-style block ───────────────────────── */
+  .qr-block {
+    position: absolute; pointer-events: none; z-index: 5;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 1.5px; background: var(--paper);
+    padding: 4px; box-shadow: 0 0 0 1.5px var(--paper);
+  }
+  .qr-block .px { background: var(--paper); }
+  .qr-block .px.on { background: var(--ink); }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 1 — COVER
+     ══════════════════════════════════════════════════════════════ */
+  .s-cover { background: var(--paper); }
+  .s-cover .titlewrap {
+    position: absolute;
+    left: clamp(36px, 3.6vw, 80px);
+    top: clamp(80px, 9vh, 160px);
+    z-index: 5; max-width: 62%;
+  }
+  .s-cover .title {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(78px, min(10vw, 17vh), 190px);
+    line-height: 0.92; letter-spacing: -0.012em; color: var(--ink); margin: 0;
+  }
+  .s-cover .subkicker { margin-top: clamp(20px, 2.2vh, 36px); display: flex; flex-direction: column; gap: 6px; }
+  .s-cover .subkicker .l {
+    font-family: 'Hanken Grotesk', sans-serif; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(13px, 1vw, 16px); color: var(--ink);
+  }
+  .s-cover .subkicker .ed {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: clamp(26px, min(2.7vw, 4.4vh), 48px);
+    line-height: 1.1; color: var(--ink); max-width: 20ch;
+  }
+  .s-cover .pixel-glitch {
+    top: clamp(60px, 6vh, 120px);
+    right: clamp(36px, 3.6vw, 80px);
+    width: clamp(260px, 30vw, 520px);
+    bottom: clamp(110px, 12vh, 200px);
+  }
+  .s-cover .qr-block {
+    top: clamp(60px, 6vh, 120px);
+    right: clamp(120px, 8vw, 200px);
+    width: clamp(58px, 4.2vw, 84px);
+    height: clamp(58px, 4.2vw, 84px);
+  }
+  .s-cover .vstack {
+    position: absolute; right: clamp(36px, 3.6vw, 60px); top: 50%;
+    transform: translateY(-50%); z-index: 5;
+    display: flex; flex-direction: column; gap: clamp(10px, 1.2vh, 18px); align-items: end;
+  }
+  .s-cover .vstack .v-row {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(12px, 0.9vw, 15px); line-height: 1; color: var(--ink);
+    letter-spacing: 0.04em; writing-mode: vertical-rl; text-orientation: mixed;
+  }
+  .s-cover .cfooter {
+    position: absolute;
+    left: clamp(36px, 3.6vw, 80px);
+    right: clamp(620px, 38vw, 820px);
+    bottom: clamp(82px, 8vh, 120px);
+    display: flex; justify-content: flex-start; align-items: end;
+    z-index: 5; gap: clamp(28px, 3vw, 56px);
+  }
+  .s-cover .cfooter .colf {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: clamp(14px, 0.92vw, 15px); line-height: 1.45; color: var(--ink);
+  }
+  .s-cover .cfooter .colf .ftag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(11px, 0.78vw, 13px); margin-bottom: 4px; color: var(--ink);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 2 — MANIFESTO (the problem, as a statement)
+     ══════════════════════════════════════════════════════════════ */
+  .s-manifesto { background: var(--paper); }
+  .s-manifesto .stmt-wrap {
+    position: absolute;
+    left: clamp(60px, 8vw, 160px);
+    right: clamp(60px, 8vw, 160px);
+    top: 50%; transform: translateY(-50%); z-index: 5; text-align: left;
+  }
+  .s-manifesto .stmt {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(46px, min(5.6vw, 9.5vh), 104px);
+    line-height: 1.05; letter-spacing: -0.005em; color: var(--ink); margin: 0;
+  }
+  .s-manifesto .stmt .roman { font-style: normal; font-weight: 500; }
+  .s-manifesto .attr {
+    margin-top: clamp(28px, 3vh, 50px);
+    display: flex; gap: clamp(14px, 1.4vw, 24px); align-items: center;
+    border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 18px);
+  }
+  .s-manifesto .attr .who {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+    font-size: clamp(12px, 0.85vw, 14px); color: var(--ink);
+  }
+  .s-manifesto .attr .meta-tag {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(12px, 0.82vw, 14px); color: var(--ink);
+    letter-spacing: 0.04em; opacity: 0.78;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 3 — INDEX (the five failure modes)
+     ══════════════════════════════════════════════════════════════ */
+  .s-index { background: var(--paper); }
+  .s-index .frame {
+    position: absolute;
+    inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px);
+    display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr;
+    gap: clamp(20px, 2.2vh, 36px); z-index: 5;
+  }
+  .s-index .topbar {
+    display: flex; align-items: end; justify-content: space-between;
+    border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px); gap: 30px;
+  }
+  .s-index .topbar .h {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: clamp(40px, min(4.6vw, 8vh), 92px); line-height: 0.95; color: var(--ink);
+  }
+  .s-index .topbar .lab-tag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right;
+  }
+  .s-index .list {
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr;
+    gap: clamp(14px, 2vh, 28px) clamp(28px, 3vw, 56px);
+  }
+  .s-index .row {
+    align-self: stretch; display: grid; grid-template-columns: 56px 1fr;
+    gap: clamp(12px, 1.4vw, 22px);
+    border-bottom: 1px solid rgba(31, 43, 224, 0.18); padding-bottom: clamp(12px, 1.4vh, 20px);
+  }
+  .s-index .row .num-tag {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(13px, 0.9vw, 15px); color: var(--ink); letter-spacing: 0.04em; padding-top: 6px;
+  }
+  .s-index .row h3 {
+    margin: 0 0 6px 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(24px, 1.9vw, 38px); line-height: 1.05; color: var(--ink);
+  }
+  .s-index .row p {
+    margin: 0; font-family: 'Hanken Grotesk', sans-serif;
+    font-size: clamp(14px, 0.95vw, 15px); line-height: 1.5; color: var(--ink); max-width: 92%;
+  }
+  .s-index .row.empty { border: none; }
+  .s-index .row.empty .num-tag { color: var(--ink-soft); opacity: 0.5; }
+  .s-index .row.empty h3 { color: var(--ink-soft); opacity: 0.6; font-style: italic; }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 4 — CHAPTER (the solution)
+     ══════════════════════════════════════════════════════════════ */
+  .s-chapter { background: var(--paper); }
+  .s-chapter .pixel-glitch {
+    top: clamp(60px, 6vh, 120px); right: 0;
+    width: clamp(220px, 26vw, 460px); bottom: clamp(110px, 12vh, 200px); opacity: 0.75;
+  }
+  .s-chapter .frame {
+    position: absolute;
+    left: clamp(36px, 3.6vw, 80px);
+    right: clamp(280px, 30vw, 540px);
+    top: clamp(80px, 9vh, 140px);
+    bottom: clamp(110px, 11vh, 170px);
+    display: flex; flex-direction: column; justify-content: center;
+    z-index: 5; gap: clamp(18px, 2vh, 32px);
+  }
+  .s-chapter .nm-tag {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(13px, 0.92vw, 15px); color: var(--ink); letter-spacing: 0.06em;
+  }
+  .s-chapter .ttl {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(48px, min(5.4vw, 9vh), 116px); line-height: 1.0;
+    color: var(--ink); letter-spacing: -0.005em; margin: 0;
+  }
+  .s-chapter .lede {
+    font-family: 'Hanken Grotesk', sans-serif; font-weight: 400;
+    font-size: clamp(15px, 1vw, 18px); line-height: 1.5; color: var(--ink); max-width: 54ch; margin: 0;
+  }
+  .s-chapter .runline {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(13px, 0.92vw, 15px); color: var(--ink);
+    border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 16px); letter-spacing: 0.03em;
+  }
+  .s-chapter .runline b { color: var(--ink); }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 5 — DATA (benchmark: bad vs good)
+     ══════════════════════════════════════════════════════════════ */
+  .s-data { background: var(--paper); }
+  .s-data .frame {
+    position: absolute;
+    inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px);
+    display: grid; grid-template-rows: auto 1fr; gap: clamp(20px, 2vh, 36px); z-index: 5;
+  }
+  .s-data .topbar {
+    display: flex; align-items: end; justify-content: space-between;
+    border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px); gap: 30px;
+  }
+  .s-data .topbar .h {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: clamp(38px, min(4.4vw, 7.6vh), 86px); line-height: 0.95; color: var(--ink);
+  }
+  .s-data .topbar .lab-tag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right;
+  }
+  .s-data .body { display: grid; grid-template-columns: 1fr 1.3fr; gap: clamp(28px, 3vw, 56px); }
+  .s-data .col-a { display: flex; flex-direction: column; justify-content: center; gap: clamp(20px, 2.4vh, 36px); }
+  .s-data .stat .vbig {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(90px, min(9vw, 15vh), 200px); line-height: 0.92; color: var(--ink); letter-spacing: -0.015em;
+  }
+  .s-data .stat .lab2 {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+    font-size: clamp(13px, 0.95vw, 15px); color: var(--ink); margin-top: 6px;
+  }
+  .s-data .stat .desc {
+    font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.98vw, 16px);
+    line-height: 1.5; color: var(--ink); max-width: 34ch; margin-top: 8px;
+  }
+  .s-data .chart { display: flex; flex-direction: column; justify-content: end; gap: clamp(10px, 1.2vh, 18px); }
+  .s-data .chart .bars {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: clamp(28px, 5vw, 90px); align-items: end;
+    height: 100%; min-height: clamp(260px, 36vh, 520px);
+    padding: 0 clamp(10px, 4vw, 70px);
+  }
+  .s-data .chart .stack { display: flex; flex-direction: column-reverse; gap: 4px; height: 100%; }
+  .s-data .chart .stack .cell { flex: 1 1 0; min-height: 6px; background: rgba(31, 43, 224, 0.10); }
+  .s-data .chart .stack .cell.on { background: var(--ink); }
+  .s-data .chart .stack .cell.warn { background: var(--ink-soft); }
+  .s-data .chart .ticks {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(28px, 5vw, 90px);
+    border-top: 1.5px solid var(--ink); padding: clamp(8px, 1vh, 14px) clamp(10px, 4vw, 70px) 0;
+  }
+  .s-data .chart .ticks .ticklab {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.9vw, 15px);
+    color: var(--ink); letter-spacing: 0.04em; text-align: center;
+  }
+  .s-data .chart .ticks .ticklab b { font-weight: 500; }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 6 — TABLE (how it works / the stack)
+     ══════════════════════════════════════════════════════════════ */
+  .s-table { background: var(--paper); }
+  .s-table .frame {
+    position: absolute;
+    inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px);
+    display: flex; flex-direction: column; z-index: 5;
+  }
+  .s-table .topbar {
+    display: flex; align-items: end; justify-content: space-between;
+    border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px);
+    margin-bottom: clamp(14px, 1.6vh, 24px); gap: 30px;
+  }
+  .s-table .topbar .h {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: clamp(38px, min(4.4vw, 7.6vh), 86px); line-height: 0.95; color: var(--ink);
+  }
+  .s-table .topbar .lab-tag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right;
+  }
+  .s-table .ledger { flex: 1; display: flex; flex-direction: column; gap: 0; justify-content: stretch; }
+  .s-table .row {
+    display: grid; grid-template-columns: 76px 0.7fr 1.5fr 0.8fr;
+    gap: clamp(14px, 1.4vw, 28px); align-items: center;
+    padding: 0; flex: 1 1 0; min-height: clamp(46px, 6vh, 80px);
+    border-bottom: 1px solid rgba(31, 43, 224, 0.18);
+  }
+  .s-table .row.headrow {
+    border-bottom: 1.5px solid var(--ink); flex: 0 0 auto; min-height: 0; padding: 8px 0;
+  }
+  .s-table .row.headrow > div {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(11px, 0.75vw, 12px); color: var(--ink);
+  }
+  .s-table .num-tag {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: clamp(13px, 0.95vw, 15px); color: var(--ink); letter-spacing: 0.04em;
+  }
+  .s-table .nm {
+    font-family: 'Newsreader', Georgia, serif; font-size: clamp(20px, 1.6vw, 28px);
+    line-height: 1.15; color: var(--ink);
+  }
+  .s-table .desc {
+    font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.95vw, 15px);
+    line-height: 1.4; color: var(--ink);
+  }
+  .s-table .tech-tag {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(13px, 0.92vw, 15px);
+    color: var(--ink); letter-spacing: 0.02em;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 7 — COLOPHON / CLOSING
+     ══════════════════════════════════════════════════════════════ */
+  .s-colophon { background: var(--paper); }
+  .s-colophon .pixel-glitch {
+    top: clamp(80px, 9vh, 160px); left: clamp(36px, 3.6vw, 80px);
+    width: clamp(220px, 26vw, 460px); bottom: clamp(220px, 22vh, 360px); opacity: 0.75;
+  }
+  .s-colophon .qr-block {
+    top: clamp(80px, 9vh, 160px); right: clamp(36px, 3.6vw, 80px);
+    width: clamp(72px, 5vw, 100px); height: clamp(72px, 5vw, 100px);
+  }
+  .s-colophon .titlewrap {
+    position: absolute; right: clamp(36px, 3.6vw, 80px); top: 26%;
+    z-index: 5; max-width: 58%; text-align: right;
+  }
+  .s-colophon .ktag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em;
+    font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); margin-bottom: clamp(14px, 1.6vh, 24px);
+  }
+  .s-colophon .ttl {
+    font-family: 'Newsreader', Georgia, serif; font-weight: 400;
+    font-size: clamp(56px, min(7.2vw, 12vh), 156px); line-height: 0.96;
+    color: var(--ink); letter-spacing: -0.005em; margin: 0;
+  }
+  .s-colophon .col-footer {
+    position: absolute;
+    left: clamp(36px, 3.6vw, 80px); right: clamp(36px, 3.6vw, 80px);
+    bottom: clamp(106px, 10.4vh, 160px);
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr;
+    gap: clamp(20px, 2.4vw, 44px); z-index: 5;
+  }
+  .s-colophon .col-footer > div { border-top: 1.5px solid var(--ink); padding-top: clamp(10px, 1.2vh, 16px); }
+  .s-colophon .col-footer .ftag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(11px, 0.78vw, 13px); margin-bottom: 6px; color: var(--ink);
+  }
+  .s-colophon .col-footer .ftxt {
+    font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(14px, 0.95vw, 15px);
+    line-height: 1.5; color: var(--ink);
+  }
+
+  /* Short-viewport safety: never let a slide overflow */
+  @media (max-height: 620px) {
+    .nav-hint { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="stage">
+
+    <!-- 1. COVER ──────────────────────────────────────────────── -->
+    <section class="slide s-cover hairlines active">
+      <div class="titlewrap">
+        <h1 class="title">Pitch<br/>Pilot</h1>
+        <div class="subkicker">
+          <div class="l">LiveKit + Telli Hackathon · Judge Mode</div>
+          <div class="ed">A realtime voice judge that interrupts weak pitches before the real judges do.</div>
+        </div>
+      </div>
+
+      <!-- Pixel-glitch staircase decoration -->
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="vs1" width="2.4" height="100" patternUnits="userSpaceOnUse">
+              <line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0" />
+            </pattern>
+          </defs>
+          <rect x="36" y="0"  width="38" height="14" fill="url(#vs1)"/>
+          <rect x="22" y="14" width="50" height="12" fill="url(#vs1)"/>
+          <rect x="34" y="26" width="46" height="11" fill="url(#vs1)"/>
+          <rect x="16" y="37" width="60" height="13" fill="url(#vs1)"/>
+          <rect x="28" y="50" width="48" height="11" fill="url(#vs1)"/>
+          <rect x="18" y="61" width="62" height="14" fill="url(#vs1)"/>
+          <rect x="34" y="75" width="44" height="12" fill="url(#vs1)"/>
+          <rect x="22" y="87" width="50" height="13" fill="url(#vs1)"/>
+        </svg>
+      </div>
+
+      <div class="vstack">
+        <div class="v-row">room · judgemode</div>
+        <div class="v-row">idea 50 / exec 50</div>
+        <div class="v-row">say "score me"</div>
+      </div>
+
+      <div class="cfooter">
+        <div class="colf">
+          <div class="ftag">Stack</div>
+          <div>LiveKit Agents · openai.realtime · gpt-realtime</div>
+        </div>
+        <div class="colf">
+          <div class="ftag">Frontend</div>
+          <div>TanStack Start · Bun · live scorecard</div>
+        </div>
+      </div>
+
+      <div class="pagenum">01 / 07</div>
+    </section>
+
+    <!-- 2. MANIFESTO — the problem ─────────────────────────────── -->
+    <section class="slide s-manifesto hairlines">
+      <div class="stmt-wrap">
+        <p class="stmt">A weak pitch dies in the Q&amp;A — <span class="roman">long after the moment you could have fixed it.</span></p>
+        <div class="attr">
+          <div class="who">The problem</div>
+          <div class="meta-tag">Judges decide in seconds · you find out far too late</div>
+        </div>
+      </div>
+      <div class="pagenum">02 / 07</div>
+    </section>
+
+    <!-- 3. INDEX — the five failure modes ──────────────────────── -->
+    <section class="slide s-index hairlines">
+      <div class="frame">
+        <div class="topbar">
+          <div class="h">Pitches fail the same five ways.</div>
+          <div class="lab-tag">What PitchPilot listens for</div>
+        </div>
+        <div class="list">
+          <div class="row">
+            <div class="num-tag">01.</div>
+            <div>
+              <h3>No clear problem</h3>
+              <p>A solution in search of a question. Who has this pain, and how badly?</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag">02.</div>
+            <div>
+              <h3>Weak "why voice"</h3>
+              <p>Could have been a form or a button. The spoken interface isn't earning its place.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag">03.</div>
+            <div>
+              <h3>No demo</h3>
+              <p>Slides describing software no one in the room has actually seen run.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag">04.</div>
+            <div>
+              <h3>No benchmark</h3>
+              <p>"It works well" — with nothing measured, compared, or proven to back it.</p>
+            </div>
+          </div>
+          <div class="row">
+            <div class="num-tag">05.</div>
+            <div>
+              <h3>Jargon dumping</h3>
+              <p>Buzzwords stacked where substance should be. Synergy is not a feature.</p>
+            </div>
+          </div>
+          <div class="row empty">
+            <div class="num-tag">—</div>
+            <div>
+              <h3>…heard one of these?</h3>
+              <p>PitchPilot barges in the moment it does.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">03 / 07</div>
+    </section>
+
+    <!-- 4. CHAPTER — the solution ──────────────────────────────── -->
+    <section class="slide s-chapter hairlines">
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="vs4" width="2.4" height="100" patternUnits="userSpaceOnUse">
+              <line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0" />
+            </pattern>
+          </defs>
+          <rect x="40" y="0"  width="40" height="14" fill="url(#vs4)"/>
+          <rect x="20" y="14" width="56" height="12" fill="url(#vs4)"/>
+          <rect x="32" y="26" width="48" height="11" fill="url(#vs4)"/>
+          <rect x="14" y="37" width="64" height="13" fill="url(#vs4)"/>
+          <rect x="26" y="50" width="50" height="11" fill="url(#vs4)"/>
+          <rect x="16" y="61" width="62" height="14" fill="url(#vs4)"/>
+          <rect x="32" y="75" width="46" height="12" fill="url(#vs4)"/>
+          <rect x="20" y="87" width="54" height="13" fill="url(#vs4)"/>
+        </svg>
+      </div>
+
+      <div class="frame">
+        <div class="nm-tag">The solution — a judge that doesn't wait politely</div>
+        <h2 class="ttl">It listens, cuts in, and scores on cue.</h2>
+        <p class="lede">PitchPilot joins the room over WebRTC and listens to your pitch as you speak. The moment it hears a weakness it <strong>barges in</strong> — no waiting for you to finish the sentence. Say <strong>"score me"</strong> and it returns a rubric scorecard, spoken aloud and rendered live in the browser.</p>
+        <div class="runline">rubric · <b>Idea 50%</b> &nbsp;/&nbsp; <b>Execution 50%</b> &nbsp;·&nbsp; built for the LiveKit + Telli hackathon</div>
+      </div>
+
+      <div class="pagenum">04 / 07</div>
+    </section>
+
+    <!-- 5. DATA — benchmark: bad vs good ───────────────────────── -->
+    <section class="slide s-data hairlines">
+      <div class="frame">
+        <div class="topbar">
+          <div class="h">We can prove it judges well.</div>
+          <div class="lab-tag">Offline benchmark · no voice required</div>
+        </div>
+        <div class="body">
+          <div class="col-a">
+            <div class="stat">
+              <div class="vbig">81<span style="font-size:0.42em; letter-spacing:0;">/100</span></div>
+              <div class="lab2">Good pitch · score_pitch()</div>
+              <div class="desc">A pure <span class="mono">score_pitch(transcript)</span> function (gpt-4o-mini → strict JSON) the good pitch scores far above the bad one — asserted in CI.</div>
+            </div>
+          </div>
+          <div class="chart">
+            <!-- Two pixel stacks, 10 cells each; .on cells fill from baseline. -->
+            <div class="bars">
+              <div class="stack"><!-- Bad pitch: 4/10 -->
+                <div class="cell warn"></div><div class="cell warn"></div><div class="cell warn"></div><div class="cell warn"></div>
+                <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+              </div>
+              <div class="stack"><!-- Good pitch: 8/10 -->
+                <div class="cell on"></div><div class="cell on"></div><div class="cell on"></div><div class="cell on"></div>
+                <div class="cell on"></div><div class="cell on"></div><div class="cell on"></div><div class="cell on"></div>
+                <div class="cell"></div><div class="cell"></div>
+              </div>
+            </div>
+            <div class="ticks">
+              <div class="ticklab">BAD PITCH<br/><b>38 / 100</b></div>
+              <div class="ticklab">GOOD PITCH<br/><b>81 / 100</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">05 / 07</div>
+    </section>
+
+    <!-- 6. TABLE — how it works / the stack ────────────────────── -->
+    <section class="slide s-table hairlines">
+      <div class="frame">
+        <div class="topbar">
+          <div class="h">One room. Three players.</div>
+          <div class="lab-tag">Auto-dispatched into every new room</div>
+        </div>
+        <div class="ledger">
+          <div class="row headrow">
+            <div>No.</div>
+            <div>Component</div>
+            <div>Role</div>
+            <div>Tech</div>
+          </div>
+          <div class="row">
+            <div class="num-tag">01.</div>
+            <div class="nm">Browser</div>
+            <div class="desc">Mints a LiveKit token, connects the mic, renders the live scorecard.</div>
+            <div class="tech-tag">TanStack Start · Bun</div>
+          </div>
+          <div class="row">
+            <div class="num-tag">02.</div>
+            <div class="nm">LiveKit Room</div>
+            <div class="desc">WebRTC audio + data channel. Carries the scorecard JSON back to the browser.</div>
+            <div class="tech-tag">LiveKit Cloud</div>
+          </div>
+          <div class="row">
+            <div class="num-tag">03.</div>
+            <div class="nm">Python Agent</div>
+            <div class="desc">Tough-judge persona. Speaks the verdict and publishes the scorecard.</div>
+            <div class="tech-tag">LiveKit Agents · gpt-realtime</div>
+          </div>
+          <div class="row">
+            <div class="num-tag">04.</div>
+            <div class="nm">The eval</div>
+            <div class="desc">Pure scoring function with a pytest benchmark: bad &lt; good, every run.</div>
+            <div class="tech-tag">gpt-4o-mini → JSON</div>
+          </div>
+        </div>
+      </div>
+      <div class="pagenum">06 / 07</div>
+    </section>
+
+    <!-- 7. COLOPHON / CLOSING ──────────────────────────────────── -->
+    <section class="slide s-colophon hairlines">
+      <div class="pixel-glitch" aria-hidden="true">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="vs7" width="2.4" height="100" patternUnits="userSpaceOnUse">
+              <line x1="0.5" y1="0" x2="0.5" y2="100" stroke="#1F2BE0" stroke-width="1.0" />
+            </pattern>
+          </defs>
+          <rect x="0"  y="0"  width="48" height="13" fill="url(#vs7)"/>
+          <rect x="14" y="13" width="56" height="12" fill="url(#vs7)"/>
+          <rect x="0"  y="25" width="64" height="14" fill="url(#vs7)"/>
+          <rect x="20" y="39" width="50" height="13" fill="url(#vs7)"/>
+          <rect x="6"  y="52" width="60" height="14" fill="url(#vs7)"/>
+          <rect x="18" y="66" width="48" height="13" fill="url(#vs7)"/>
+          <rect x="0"  y="79" width="56" height="14" fill="url(#vs7)"/>
+          <rect x="20" y="93" width="44" height="7"  fill="url(#vs7)"/>
+        </svg>
+      </div>
+
+      <div class="qr-block" aria-hidden="true">
+        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
+        <span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span>
+        <span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span>
+        <span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
+        <span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span>
+        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span>
+        <span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span>
+        <span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span><span class="px on"></span><span class="px on"></span><span class="px"></span>
+      </div>
+
+      <div class="titlewrap">
+        <div class="ktag">Closing · PitchPilot</div>
+        <h2 class="ttl">Fix the pitch before<br/>the judges hear it.</h2>
+      </div>
+
+      <div class="col-footer">
+        <div>
+          <div class="ftag">Run it</div>
+          <div class="ftxt">Agent worker + web, two processes<br/>room · judgemode</div>
+        </div>
+        <div>
+          <div class="ftag">Try it</div>
+          <div class="ftxt">Start pitching · allow the mic<br/>pause on a weak line</div>
+        </div>
+        <div>
+          <div class="ftag">Score it</div>
+          <div class="ftxt">Say "score me" for the<br/>rubric scorecard, live</div>
+        </div>
+        <div>
+          <div class="ftag">Built with</div>
+          <div class="ftxt">LiveKit + Telli · openai.realtime · TanStack Start · Python 3.12 · Bun</div>
+        </div>
+      </div>
+
+      <div class="pagenum">07 / 07</div>
+    </section>
+
+  </div>
+</div>
+
+<div class="nav-hint">← / → · space</div>
+
+<script>
+  // Plain vanilla navigation: arrows, space, home/end, swipe.
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let current = 0;
+  function show(i) {
+    if (i < 0) i = 0;
+    if (i > slides.length - 1) i = slides.length - 1;
+    slides[current].classList.remove('active');
+    slides[i].classList.add('active');
+    current = i;
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp')               { e.preventDefault(); show(current - 1); }
+    else if (e.key === 'Home')                                          { e.preventDefault(); show(0); }
+    else if (e.key === 'End')                                           { e.preventDefault(); show(slides.length - 1); }
+  });
+  let tx = null;
+  document.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (tx == null) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
+    tx = null;
+  });
+</script>
+
+</body>
+</html>
