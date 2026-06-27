@@ -53,7 +53,12 @@ async def entrypoint(ctx: agents.JobContext):
 
     await session.start(room=ctx.room, agent=JudgeAgent())
     await session.generate_reply(
-        instructions="In ONE short sentence, say you are PitchPilot and tell them to start their pitch."
+        instructions=(
+            "Speak first, before they say anything. In two short sentences: introduce "
+            "yourself as PitchPilot, the hackathon judge, then invite them to begin — "
+            "e.g. 'Whenever you're ready, give me your pitch — and say \"score me\" when "
+            "you're done.' Keep it crisp and confident, then stop and listen."
+        )
     )
 
 
