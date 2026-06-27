@@ -1,12 +1,80 @@
-# PitchPilot
+<p align="center">
+  <img src="web/public/brand.png" alt="PitchPilot" width="260" />
+</p>
 
-A realtime voice judge that interrupts weak hackathon pitches before the real judges do.
+<h3 align="center">The judge that interrupts your pitch — before the real judges do.</h3>
 
-You pitch out loud. PitchPilot listens, and the moment it hears a weak spot (no clear problem, a thin "why voice", no demo, no benchmark, too much jargon) it cuts in. Say "score me" and it hands back a scorecard against the hackathon rubric.
+<p align="center">
+  Realtime voice. It barges in the second your pitch goes weak.<br />
+  Say <b>“score me”</b> and it hands back a scorecard against the hackathon rubric.
+</p>
 
-Built for the LiveKit + Telli hackathon. The rubric is Idea 50%, Execution 50%.
+<p align="center">
+  <img src="https://img.shields.io/badge/LiveKit-Agents-1F2BE0?style=flat-square" alt="LiveKit Agents" />
+  <img src="https://img.shields.io/badge/OpenAI-gpt--realtime-FF5A1F?style=flat-square" alt="OpenAI realtime" />
+  <img src="https://img.shields.io/badge/TanStack_Start-Bun-1F2BE0?style=flat-square" alt="TanStack Start + Bun" />
+  <img src="https://img.shields.io/badge/Python-3.12+-FF5A1F?style=flat-square" alt="Python 3.12+" />
+</p>
 
-## Architecture
+<p align="center">
+  <a href="docs/pitch-deck.html"><b>📊 Pitch deck</b></a> &nbsp;·&nbsp;
+  <a href="#try-it"><b>▶︎ Run it</b></a> &nbsp;·&nbsp;
+  <i>Built for the LiveKit + Telli hackathon</i>
+</p>
+
+---
+
+## Bad demos don't fail at the end. They fail in the first 20 seconds.
+
+Hackathon teams don't usually lose because the idea is impossible. They lose because the
+pitch sounds bad early — and nobody tells them until the Q&A goes quiet.
+
+PitchPilot is the practice judge that *does* tell you, out loud, mid-sentence:
+
+> **You:** “We use LiveKit, OpenAI, TanStack, realtime transcription—”
+> **PitchPilot:** ⏸ *“Pause. That's implementation, not a pitch.”*
+> **You:** “Teams lose because their demo sounds bad.”
+> **PitchPilot:** ⏸ *“Better. Now — why voice?”*
+
+It listens for the five ways pitches die — **no clear problem · weak “why voice” ·
+no demo moment · no benchmark · jargon dumping** — and cuts in on the first one costing you points.
+
+## Say “score me”
+
+When you're done, you get a verdict against the official rubric — spoken aloud **and** on screen,
+always the same numbers:
+
+```
+SCORECARD · judgemode
+─────────────────────────────────
+Idea          50%   ███████░░░  7/10
+Execution     50%   ███████░░░  7/10
+─────────────────────────────────
+why voice              6   ·  demo clarity   7
+technical depth        8   ·  benchmark   present
+─────────────────────────────────
+best next fix   Open with the user and their pain
+                before you say “platform.”
+Verdict         Clear demo, weak benchmark.        TOTAL 65/100
+```
+
+The voice never invents a score. It reads back exactly the card the scoring function produced —
+one source of truth, so the audio and the UI can never disagree.
+
+## We can prove it judges well
+
+PitchPilot ships an offline benchmark — no microphone needed. It scores two fixture pitches and
+asserts the revised one wins, every run:
+
+| Fixture | Total |
+| --- | --- |
+| Implementation dump | **20 / 100** |
+| Clear, voice-native pitch | **65 / 100** |
+
+The eval isn't about AI quality — it measures whether a pitch got *clearer* against the rubric.
+So a team can check whether a revision actually improved before they ever walk on stage.
+
+## How it works
 
 ```
 ┌─────────────┐   WebRTC    ┌──────────────┐   joins    ┌────────────────────────┐
@@ -17,35 +85,36 @@ Built for the LiveKit + Telli hackathon. The rubric is Idea 50%, Execution 50%.
 └─────────────┘                                          └────────────────────────┘
 ```
 
-The agent in `agent/` is a Python [LiveKit Agents](https://docs.livekit.io/agents/) worker. It runs the OpenAI realtime model with a tough-judge persona. The realtime model only hosts and interrupts — it never invents scores. On the scoring cue it computes the card with `score_pitch()`, publishes it as JSON over the data channel, then reads back that exact card out loud, so the voice and the on-screen scorecard can never disagree (one source of truth).
+One LiveKit room: your browser, the realtime judge agent, and the scorecard travelling back over
+the data channel. The judge can interrupt while you're **still speaking** — that's the whole point.
 
-The frontend in `web/` is a TanStack Start app (React and TypeScript, run with Bun). It mints a LiveKit token from a server route, connects your mic to the room, and draws the scorecard.
+> **The model decides. The code owns the consequences.** The realtime model hosts and interrupts;
+> a typed `score_pitch()` (Pydantic + OpenAI structured outputs, `gpt-4o`) is the only thing that
+> produces a number, and `total` is computed in code, never by the model.
 
-`agent/scoring.py` holds one plain function, `score_pitch(transcript)`, returning a typed `Scorecard` (Pydantic + OpenAI structured outputs, `gpt-4o`). `total` is the official rubric score — Idea 50% plus Execution 50% — computed in code, never by the model. Only the founder's turns are scored, so the judge's own interruptions can't be counted as pitch content. It also doubles as the benchmark: a bad pitch has to score below a good one, and `agent/test_scoring.py` checks that.
+<a id="try-it"></a>
 
-The worker sets no `agent_name`, so LiveKit Cloud sends it into every new room. Both sides meet in a room called `judgemode`.
+## Try it
 
-## What you need
+<details>
+<summary><b>Run it locally</b> — two processes, ~2 minutes</summary>
 
-A LiveKit Cloud project, which gives you `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET`. An OpenAI API key for `OPENAI_API_KEY`. Python 3.12 or newer, and Bun 1.3 or newer.
+<br />
 
-## Running it
+You'll need a [LiveKit Cloud](https://livekit.io/) project (`LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+`LIVEKIT_API_SECRET`), an `OPENAI_API_KEY`, **Python 3.12+** and **Bun 1.3+**.
 
-PitchPilot runs as two processes.
-
-Start the agent worker:
+**1. The judge (agent worker)**
 
 ```bash
 cd agent
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # then fill in LIVEKIT_* and OPENAI_API_KEY
-python main.py dev
+cp .env.example .env        # fill in LIVEKIT_* and OPENAI_API_KEY
+python main.py dev          # wait for "registered worker"
 ```
 
-Wait for `registered worker` in the logs. That line means the LiveKit credentials work.
-
-Then start the frontend:
+**2. The stage (frontend)**
 
 ```bash
 cd web
@@ -57,22 +126,22 @@ bun install
 bun run dev
 ```
 
-Open the printed URL, usually http://localhost:3000. Click Start pitching and allow the mic. The agent has to be running too, or no judge joins the room.
+Open the printed URL (usually http://localhost:3000), click **Start pitching**, and allow the mic.
+The agent must be running too, or no judge joins the room.
 
-## Benchmark
-
-This runs without a microphone and proves a bad pitch scores below a good one:
+**Run the benchmark** (no mic):
 
 ```bash
 cd agent && source .venv/bin/activate
 OPENAI_API_KEY=sk-... python -m pytest test_scoring.py -v
 ```
 
-You should see two passing tests. Without the key they skip.
+</details>
 
-## Docs
+## More
 
-- Design notes: [`docs/superpowers/specs/2026-06-27-judgemode-design.md`](docs/superpowers/specs/2026-06-27-judgemode-design.md)
-- Build plan: [`docs/superpowers/plans/2026-06-27-judgemode.md`](docs/superpowers/plans/2026-06-27-judgemode.md)
-- How to run and what breaks: [`docs/usage.md`](docs/usage.md)
-- What is done and what is left: [`docs/todo.md`](docs/todo.md)
+- 📊 [Pitch deck](docs/pitch-deck.html)
+- 📝 [Design notes](docs/superpowers/specs/2026-06-27-judgemode-design.md) · [Build plan](docs/superpowers/plans/2026-06-27-judgemode.md)
+- 🔧 [How to run & what breaks](docs/usage.md) · [Done / left to do](docs/todo.md)
+
+<p align="center"><sub>Built for the LiveKit + Telli hackathon · rubric: Idea 50 / Execution 50</sub></p>
