@@ -41,12 +41,15 @@ async def entrypoint(ctx: agents.JobContext):
             asyncio.create_task(_publish_card())
 
     async def _publish_card():
-        full = "\n".join(transcript)
-        card = await asyncio.to_thread(score_pitch, full)
-        await ctx.room.local_participant.publish_data(
-            json.dumps(card).encode("utf-8"), reliable=True, topic="scorecard"
-        )
-        logger.info("published scorecard: %s", card)
+        try:
+            full = "\n".join(transcript)
+            card = await asyncio.to_thread(score_pitch, full)
+            await ctx.room.local_participant.publish_data(
+                json.dumps(card).encode("utf-8"), reliable=True, topic="scorecard"
+            )
+            logger.info("published scorecard: %s", card)
+        except Exception:
+            logger.exception("scorecard publish failed")
 
     await session.start(room=ctx.room, agent=JudgeAgent())
     await session.generate_reply(
