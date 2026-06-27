@@ -9,54 +9,137 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HistoryIdRouteImport } from './routes/history.$id'
 import { Route as ApiTokenRouteImport } from './routes/api.token'
+import { Route as ApiPitchesRouteImport } from './routes/api.pitches'
+import { Route as ApiPitchesIdRouteImport } from './routes/api.pitches.$id'
+import { Route as ApiPitchesIdAudioRouteImport } from './routes/api.pitches.$id.audio'
 
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryIdRoute = HistoryIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => HistoryRoute,
 } as any)
 const ApiTokenRoute = ApiTokenRouteImport.update({
   id: '/api/token',
   path: '/api/token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPitchesRoute = ApiPitchesRouteImport.update({
+  id: '/api/pitches',
+  path: '/api/pitches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPitchesIdRoute = ApiPitchesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPitchesRoute,
+} as any)
+const ApiPitchesIdAudioRoute = ApiPitchesIdAudioRouteImport.update({
+  id: '/audio',
+  path: '/audio',
+  getParentRoute: () => ApiPitchesIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/history': typeof HistoryRouteWithChildren
+  '/api/pitches': typeof ApiPitchesRouteWithChildren
   '/api/token': typeof ApiTokenRoute
+  '/history/$id': typeof HistoryIdRoute
+  '/api/pitches/$id': typeof ApiPitchesIdRouteWithChildren
+  '/api/pitches/$id/audio': typeof ApiPitchesIdAudioRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/history': typeof HistoryRouteWithChildren
+  '/api/pitches': typeof ApiPitchesRouteWithChildren
   '/api/token': typeof ApiTokenRoute
+  '/history/$id': typeof HistoryIdRoute
+  '/api/pitches/$id': typeof ApiPitchesIdRouteWithChildren
+  '/api/pitches/$id/audio': typeof ApiPitchesIdAudioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/history': typeof HistoryRouteWithChildren
+  '/api/pitches': typeof ApiPitchesRouteWithChildren
   '/api/token': typeof ApiTokenRoute
+  '/history/$id': typeof HistoryIdRoute
+  '/api/pitches/$id': typeof ApiPitchesIdRouteWithChildren
+  '/api/pitches/$id/audio': typeof ApiPitchesIdAudioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/token'
+  fullPaths:
+    | '/'
+    | '/history'
+    | '/api/pitches'
+    | '/api/token'
+    | '/history/$id'
+    | '/api/pitches/$id'
+    | '/api/pitches/$id/audio'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/token'
-  id: '__root__' | '/' | '/api/token'
+  to:
+    | '/'
+    | '/history'
+    | '/api/pitches'
+    | '/api/token'
+    | '/history/$id'
+    | '/api/pitches/$id'
+    | '/api/pitches/$id/audio'
+  id:
+    | '__root__'
+    | '/'
+    | '/history'
+    | '/api/pitches'
+    | '/api/token'
+    | '/history/$id'
+    | '/api/pitches/$id'
+    | '/api/pitches/$id/audio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  HistoryRoute: typeof HistoryRouteWithChildren
+  ApiPitchesRoute: typeof ApiPitchesRouteWithChildren
   ApiTokenRoute: typeof ApiTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/history/$id': {
+      id: '/history/$id'
+      path: '/$id'
+      fullPath: '/history/$id'
+      preLoaderRoute: typeof HistoryIdRouteImport
+      parentRoute: typeof HistoryRoute
     }
     '/api/token': {
       id: '/api/token'
@@ -65,11 +148,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pitches': {
+      id: '/api/pitches'
+      path: '/api/pitches'
+      fullPath: '/api/pitches'
+      preLoaderRoute: typeof ApiPitchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pitches/$id': {
+      id: '/api/pitches/$id'
+      path: '/$id'
+      fullPath: '/api/pitches/$id'
+      preLoaderRoute: typeof ApiPitchesIdRouteImport
+      parentRoute: typeof ApiPitchesRoute
+    }
+    '/api/pitches/$id/audio': {
+      id: '/api/pitches/$id/audio'
+      path: '/audio'
+      fullPath: '/api/pitches/$id/audio'
+      preLoaderRoute: typeof ApiPitchesIdAudioRouteImport
+      parentRoute: typeof ApiPitchesIdRoute
+    }
   }
 }
 
+interface HistoryRouteChildren {
+  HistoryIdRoute: typeof HistoryIdRoute
+}
+
+const HistoryRouteChildren: HistoryRouteChildren = {
+  HistoryIdRoute: HistoryIdRoute,
+}
+
+const HistoryRouteWithChildren =
+  HistoryRoute._addFileChildren(HistoryRouteChildren)
+
+interface ApiPitchesIdRouteChildren {
+  ApiPitchesIdAudioRoute: typeof ApiPitchesIdAudioRoute
+}
+
+const ApiPitchesIdRouteChildren: ApiPitchesIdRouteChildren = {
+  ApiPitchesIdAudioRoute: ApiPitchesIdAudioRoute,
+}
+
+const ApiPitchesIdRouteWithChildren = ApiPitchesIdRoute._addFileChildren(
+  ApiPitchesIdRouteChildren,
+)
+
+interface ApiPitchesRouteChildren {
+  ApiPitchesIdRoute: typeof ApiPitchesIdRouteWithChildren
+}
+
+const ApiPitchesRouteChildren: ApiPitchesRouteChildren = {
+  ApiPitchesIdRoute: ApiPitchesIdRouteWithChildren,
+}
+
+const ApiPitchesRouteWithChildren = ApiPitchesRoute._addFileChildren(
+  ApiPitchesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  HistoryRoute: HistoryRouteWithChildren,
+  ApiPitchesRoute: ApiPitchesRouteWithChildren,
   ApiTokenRoute: ApiTokenRoute,
 }
 export const routeTree = rootRouteImport

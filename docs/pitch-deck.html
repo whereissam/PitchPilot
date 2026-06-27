@@ -490,6 +490,59 @@
     line-height: 1.5; color: var(--ink);
   }
 
+  /* ══════════════════════════════════════════════════════════════
+     SLIDE 7 — THE LOOP (practice → improvement, the product story)
+     ══════════════════════════════════════════════════════════════ */
+  .s-loop { background: var(--paper); }
+  .s-loop .frame {
+    position: absolute;
+    inset: clamp(76px, 8vh, 130px) clamp(36px, 3.6vw, 80px) clamp(100px, 10vh, 150px);
+    display: grid; grid-template-rows: auto 1fr auto; gap: clamp(18px, 2.2vh, 34px); z-index: 5;
+  }
+  .s-loop .topbar {
+    display: flex; align-items: end; justify-content: space-between;
+    border-bottom: 1.5px solid var(--ink); padding-bottom: clamp(12px, 1.4vh, 22px); gap: 30px;
+  }
+  .s-loop .topbar .h {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: clamp(38px, min(4.4vw, 7.6vh), 86px); line-height: 0.95; color: var(--ink);
+  }
+  .s-loop .topbar .lab-tag {
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: clamp(12px, 0.9vw, 14px); color: var(--ink); text-align: right; max-width: 26ch;
+  }
+  .s-loop .runs { display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 1.8vh, 26px); }
+  .s-loop .run {
+    display: grid; grid-template-columns: clamp(64px,6vw,92px) 1fr auto;
+    align-items: center; gap: clamp(16px, 2vw, 34px);
+  }
+  .s-loop .run .rk {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(12px, 0.9vw, 15px);
+    letter-spacing: 0.06em; color: var(--ink); opacity: 0.7;
+  }
+  .s-loop .run .bar { position: relative; height: clamp(16px, 2.2vh, 28px); background: rgba(31,43,224,0.10); }
+  .s-loop .run .bar > span { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+  .s-loop .run.best .bar > span { background: var(--accent); }
+  .s-loop .run .sc {
+    font-family: 'Newsreader', Georgia, serif; font-size: clamp(30px, 3vw, 56px);
+    line-height: 0.95; color: var(--ink); letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .s-loop .run.best .sc { color: var(--accent); }
+  .s-loop .run .sc small { font-size: 0.4em; opacity: 0.5; }
+  .s-loop .run .tag {
+    font-family: 'Hanken Grotesk', sans-serif; font-size: clamp(12px, 0.9vw, 15px);
+    color: var(--ink); opacity: 0.72; margin-left: 10px;
+  }
+  .s-loop .flow {
+    border-top: 1px solid var(--ink); padding-top: clamp(10px, 1.2vh, 16px);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .s-loop .flow .ln {
+    font-family: 'DM Mono', ui-monospace, monospace; font-size: clamp(13px, 0.95vw, 16px);
+    letter-spacing: 0.04em; color: var(--ink);
+  }
+  .s-loop .flow .ln b { color: var(--accent); font-weight: 500; }
+
   /* Short-viewport safety: never let a slide overflow */
   @media (max-height: 620px) {
     .nav-hint { display: none; }
@@ -550,7 +603,7 @@
         </div>
       </div>
 
-      <div class="pagenum">01 / 07</div>
+      <div class="pagenum">01 / 08</div>
     </section>
 
     <!-- 2. MANIFESTO — the problem ─────────────────────────────── -->
@@ -562,7 +615,7 @@
           <div class="meta-tag">Not in the Q&amp;A · while you're still speaking</div>
         </div>
       </div>
-      <div class="pagenum">02 / 07</div>
+      <div class="pagenum">02 / 08</div>
     </section>
 
     <!-- 3. INDEX — the five failure modes ──────────────────────── -->
@@ -617,7 +670,7 @@
           </div>
         </div>
       </div>
-      <div class="pagenum">03 / 07</div>
+      <div class="pagenum">03 / 08</div>
     </section>
 
     <!-- 4. CHAPTER — the solution ──────────────────────────────── -->
@@ -652,7 +705,7 @@
         <div class="runline">then say <b>"score me"</b> → rubric scorecard · <b>Idea 50%</b> / <b>Execution 50%</b></div>
       </div>
 
-      <div class="pagenum">04 / 07</div>
+      <div class="pagenum">04 / 08</div>
     </section>
 
     <!-- 5. DATA — benchmark: bad vs good ───────────────────────── -->
@@ -695,7 +748,7 @@
           </div>
         </div>
       </div>
-      <div class="pagenum">05 / 07</div>
+      <div class="pagenum">05 / 08</div>
     </section>
 
     <!-- 6. TABLE — how it works / the stack ────────────────────── -->
@@ -738,10 +791,45 @@
           </div>
         </div>
       </div>
-      <div class="pagenum">06 / 07</div>
+      <div class="pagenum">06 / 08</div>
     </section>
 
-    <!-- 7. COLOPHON / CLOSING ──────────────────────────────────── -->
+    <!-- 7. THE LOOP — practice → improvement ───────────────────── -->
+    <section class="slide s-loop hairlines">
+      <div class="frame">
+        <div class="topbar">
+          <div class="h">The loop doesn't end at the buzzer.</div>
+          <div class="lab-tag">Every run saved: scorecard · transcript · replay</div>
+        </div>
+
+        <div class="runs">
+          <div class="run">
+            <div class="rk">RUN 01</div>
+            <div class="bar"><span style="width:38%"></span></div>
+            <div class="sc">38<small>/100</small><span class="tag">implementation-led</span></div>
+          </div>
+          <div class="run">
+            <div class="rk">RUN 02</div>
+            <div class="bar"><span style="width:61%"></span></div>
+            <div class="sc">61<small>/100</small><span class="tag">clearer problem</span></div>
+          </div>
+          <div class="run best">
+            <div class="rk">RUN 03</div>
+            <div class="bar"><span style="width:81%"></span></div>
+            <div class="sc">81<small>/100</small><span class="tag">demo-ready</span></div>
+          </div>
+        </div>
+
+        <div class="flow">
+          <div class="ln">Practice → interrupted → scored → revised → <b>improved</b></div>
+          <div class="ln">Teams can prove the pitch actually got better — not just that it felt better.</div>
+          <div class="ln" style="opacity:0.7">Eval starts as fixtures. Then it becomes your own history.</div>
+        </div>
+      </div>
+      <div class="pagenum">07 / 08</div>
+    </section>
+
+    <!-- 8. COLOPHON / CLOSING ──────────────────────────────────── -->
     <section class="slide s-colophon hairlines">
       <div class="pixel-glitch" aria-hidden="true">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -792,7 +880,7 @@
         </div>
       </div>
 
-      <div class="pagenum">07 / 07</div>
+      <div class="pagenum">08 / 08</div>
     </section>
 
   </div>

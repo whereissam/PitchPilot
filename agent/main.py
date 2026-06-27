@@ -58,6 +58,8 @@ async def entrypoint(ctx: agents.JobContext):
     # founder's words — so the judge's own interruptions can't be scored as pitch content.
     full_transcript: list[str] = []
     founder_transcript: list[str] = []
+    # Structured transcript for the browser to persist with the scorecard (best-effort).
+    transcript_lines: list[dict] = []
     scored = {"done": False}
 
     @session.on("conversation_item_added")
@@ -67,6 +69,7 @@ async def entrypoint(ctx: agents.JobContext):
         if not text:
             return
         full_transcript.append(f"{role}: {text}")
+        transcript_lines.append({"role": "founder" if role == "user" else "judge", "text": text})
         if role == "user":
             founder_transcript.append(text)
             if _is_scoring_cue(text) and not scored["done"]:
@@ -82,6 +85,14 @@ async def entrypoint(ctx: agents.JobContext):
                 json.dumps(card.payload()).encode("utf-8"), reliable=True, topic="scorecard"
             )
             logger.info("published scorecard: %s", card.payload())
+            # Best-effort: the browser saves this with the scorecard for replay. If it
+            # fails, the frontend falls back to an empty transcript — the save still happens.
+            try:
+                await ctx.room.local_participant.publish_data(
+                    json.dumps(transcript_lines).encode("utf-8"), reliable=True, topic="transcript"
+                )
+            except Exception:
+                logger.warning("transcript publish failed", exc_info=True)
             await session.generate_reply(instructions=_read_card_instructions(card))
         except Exception:
             logger.exception("scorecard publish failed")

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -8,26 +9,15 @@ import {
   useRoomContext,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
+import { Scoreboard, type Card } from "./Scoreboard";
+import type { TranscriptLine } from "../lib/pitches";
 
 type Conn = { token: string; url: string };
 
-type Card = {
-  idea: number;
-  execution: number;
-  demo_clarity: number;
-  technical_depth: number;
-  why_voice: number;
-  benchmark_present: boolean;
-  best_next_fix: string;
-};
+// The full scorecard payload the agent publishes (Scoreboard only reads the Card subset).
+type FullCard = Card & { verdict: string; total: number };
 
-const METRICS: [string, keyof Card][] = [
-  ["IDEA", "idea"],
-  ["EXECUTION", "execution"],
-  ["DEMO CLARITY", "demo_clarity"],
-  ["TECH DEPTH", "technical_depth"],
-  ["WHY VOICE", "why_voice"],
-];
+type SaveState = "idle" | "saving" | "ok" | "fail";
 
 // realtime agent state -> the giant scoreboard word
 function liveWord(state: string): { word: string; sub: string; hot: boolean } {
@@ -55,65 +45,6 @@ function StatusPill() {
     <div className="flex items-center gap-2 border-2 border-ink px-3 py-1.5">
       <span className={`h-2.5 w-2.5 ${active ? "bg-acid blink" : "bg-ink/40"}`} />
       <span className="font-display text-lg leading-none tracking-wide">{label}</span>
-    </div>
-  );
-}
-
-function Scoreboard({ card }: { card: Card }) {
-  return (
-    <div className="slam bg-ink text-bone">
-      <div className="border-b-2 border-bone/25 px-6 py-4 md:px-10">
-        <p className="font-display text-[clamp(2.4rem,8vw,5.5rem)] leading-[0.9] tracking-tight">
-          THE VERDICT
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3">
-        {METRICS.map(([label, key], i) => {
-          const v = card[key] as number;
-          return (
-            <div
-              key={key}
-              className="slam border-b-2 border-r-2 border-bone/15 px-6 py-5 md:px-8 md:py-7"
-              style={{ animationDelay: `${120 + i * 70}ms` }}
-            >
-              <p className="font-body text-xs font-medium tracking-[0.18em] text-bone/55">{label}</p>
-              <p
-                className={`font-display text-[clamp(3rem,9vw,6rem)] leading-none ${
-                  v >= 8 ? "text-acid" : "text-bone"
-                }`}
-              >
-                {String(v).padStart(2, "0")}
-                <span className="font-body text-base align-top text-bone/40"> /10</span>
-              </p>
-            </div>
-          );
-        })}
-
-        <div
-          className="slam border-b-2 border-bone/15 px-6 py-5 md:px-8 md:py-7"
-          style={{ animationDelay: `${120 + METRICS.length * 70}ms` }}
-        >
-          <p className="font-body text-xs font-medium tracking-[0.18em] text-bone/55">BENCHMARK</p>
-          <p
-            className={`font-display text-[clamp(1.8rem,5vw,3rem)] leading-none ${
-              card.benchmark_present ? "text-acid" : "text-bone/45"
-            }`}
-          >
-            {card.benchmark_present ? "PRESENT" : "MISSING"}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className="slam bg-acid px-6 py-6 text-ink md:px-10"
-        style={{ animationDelay: `${260 + METRICS.length * 70}ms` }}
-      >
-        <p className="font-body text-xs font-bold tracking-[0.22em]">BEST NEXT FIX</p>
-        <p className="mt-1 max-w-3xl font-display text-[clamp(1.4rem,3.4vw,2.4rem)] leading-[1.05]">
-          {card.best_next_fix}
-        </p>
-      </div>
     </div>
   );
 }
@@ -149,15 +80,88 @@ function LiveStage() {
 
 function Stage() {
   const room = useRoomContext();
-  const [card, setCard] = useState<Card | null>(null);
+  const [card, setCard] = useState<FullCard | null>(null);
+  const [saved, setSaved] = useState<SaveState>("idle");
+
+  // Best-effort artifacts: a missing transcript or audio must never block the save.
+  const transcriptRef = useRef<TranscriptLine[]>([]);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const savedOnceRef = useRef(false);
+
+  // Record the mic for replay. Own getUserMedia stream — robust against LiveKit
+  // track-publish timing; audio is best-effort, so any failure here is swallowed.
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    navigator.mediaDevices
+      ?.getUserMedia({ audio: true })
+      .then((s) => {
+        stream = s;
+        const rec = new MediaRecorder(s);
+        rec.ondataavailable = (e) => {
+          if (e.data.size) chunksRef.current.push(e.data);
+        };
+        rec.start();
+        recorderRef.current = rec;
+      })
+      .catch(() => {
+        /* no audio replay — text history still works */
+      });
+    return () => {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  useDataChannel("transcript", (msg) => {
+    try {
+      transcriptRef.current = JSON.parse(new TextDecoder().decode(msg.payload)) as TranscriptLine[];
+    } catch {
+      /* keep whatever we had — transcript is optional */
+    }
+  });
 
   useDataChannel("scorecard", (msg) => {
     try {
-      setCard(JSON.parse(new TextDecoder().decode(msg.payload)) as Card);
+      const full = JSON.parse(new TextDecoder().decode(msg.payload)) as FullCard;
+      setCard(full);
+      void savePitch(full);
     } catch {
-      /* malformed payload — ignore, V0 voice still delivers the verdict */
+      /* malformed payload — voice still delivers the verdict */
     }
   });
+
+  async function savePitch(scorecard: FullCard) {
+    if (savedOnceRef.current) return; // verdict fires once; guard against double-publish
+    savedOnceRef.current = true;
+    setSaved("saving");
+
+    let audioBlob: Blob | null = null;
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      audioBlob = await new Promise<Blob | null>((resolve) => {
+        rec.onstop = () =>
+          resolve(
+            chunksRef.current.length
+              ? new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" })
+              : null,
+          );
+        rec.stop();
+      });
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append("meta", JSON.stringify({ scorecard, transcript: transcriptRef.current }));
+      if (audioBlob) fd.append("audio", audioBlob, "pitch.webm");
+      const res = await fetch("/api/pitches", { method: "POST", body: fd });
+      setSaved(res.ok ? "ok" : "fail");
+    } catch {
+      setSaved("fail");
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -171,25 +175,56 @@ function Stage() {
             VOICE JUDGE
           </span>
         </div>
-        <StatusPill />
+        <div className="flex items-center gap-3">
+          <Link
+            to="/history"
+            className="font-body text-xs font-bold tracking-[0.18em] text-ink/55 underline-offset-4 hover:text-acid hover:underline"
+          >
+            HISTORY
+          </Link>
+          <StatusPill />
+        </div>
       </header>
 
-      <main className="flex flex-1 flex-col">
-        {card ? <Scoreboard card={card} /> : <LiveStage />}
-      </main>
+      <main className="flex flex-1 flex-col">{card ? <Scoreboard card={card} /> : <LiveStage />}</main>
 
       <footer className="flex items-center justify-between border-t-2 border-ink px-6 py-4 md:px-10">
         <span className="font-body text-xs tracking-[0.18em] text-ink/45">
           {card ? "VERDICT DELIVERED" : "LIVE — ROOM: JUDGEMODE"}
         </span>
-        <button
-          onClick={() => room.disconnect()}
-          className="border-2 border-ink bg-bone px-4 py-2 font-display text-lg tracking-wide transition-colors hover:bg-ink hover:text-bone"
-        >
-          END SESSION
-        </button>
+        <div className="flex items-center gap-4">
+          {card && <SavedMarker state={saved} />}
+          <button
+            onClick={() => room.disconnect()}
+            className="border-2 border-ink bg-bone px-4 py-2 font-display text-lg tracking-wide transition-colors hover:bg-ink hover:text-bone"
+          >
+            END SESSION
+          </button>
+        </div>
       </footer>
     </div>
+  );
+}
+
+function SavedMarker({ state }: { state: SaveState }) {
+  if (state === "idle") return null;
+  const text =
+    state === "saving"
+      ? "SAVING…"
+      : state === "ok"
+        ? "SAVED ✓"
+        : "NOT SAVED";
+  const tone = state === "fail" ? "text-acid" : "text-ink/55";
+  return (
+    <span className={`font-body text-xs font-bold tracking-[0.18em] ${tone}`}>
+      {state === "ok" ? (
+        <Link to="/history" className="hover:text-acid">
+          {text} · VIEW HISTORY
+        </Link>
+      ) : (
+        text
+      )}
+    </span>
   );
 }
 
@@ -200,11 +235,19 @@ export default function JudgeApp() {
   if (!conn) {
     return (
       <main className="flex min-h-screen flex-col justify-between px-6 py-12 md:px-16 md:py-20">
-        <div className="flex items-center gap-3">
-          <img src="/logo.svg" alt="PitchPilot" className="h-11 w-11 md:h-12 md:w-12" />
-          <span className="font-body text-xs font-bold tracking-[0.28em] text-acid">
-            REALTIME VOICE JUDGE
-          </span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src="/logo.svg" alt="PitchPilot" className="h-11 w-11 md:h-12 md:w-12" />
+            <span className="font-body text-xs font-bold tracking-[0.28em] text-acid">
+              REALTIME VOICE JUDGE
+            </span>
+          </div>
+          <Link
+            to="/history"
+            className="font-body text-xs font-bold tracking-[0.18em] text-ink/55 underline-offset-4 hover:text-acid hover:underline"
+          >
+            HISTORY →
+          </Link>
         </div>
 
         <div>
