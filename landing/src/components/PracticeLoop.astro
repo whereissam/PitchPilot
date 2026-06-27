@@ -1,0 +1,148 @@
+---
+// The "after the buzzer" story: every run is saved, scored, and compared.
+const runs = [
+  { k: 'Run 01', tag: 'implementation-led', score: 38 },
+  { k: 'Run 02', tag: 'clearer problem', score: 61 },
+  { k: 'Run 03', tag: 'demo-ready', score: 81, best: true },
+]
+---
+
+<section class="section loop" id="progress">
+  <div class="wrap loop__grid">
+    <div class="loop__copy" data-reveal>
+      <span class="eyebrow label">The loop doesn’t end at the buzzer</span>
+      <h2 class="display loop__title">
+        Every practice run<br />becomes a record.
+      </h2>
+      <p class="loop__sub">
+        One review is a tool. A stack of them is a training system. PitchPilot
+        saves every finished pitch — scorecard, transcript, and a replay of your
+        voice — so you can see whether the pitch actually got better, not just
+        whether it felt better.
+      </p>
+      <p class="loop__note mono">
+        practice → interrupted → scored → revised → <span class="loop__note-hot">improved</span>
+      </p>
+    </div>
+
+    <figure class="trend" data-reveal data-delay="1" aria-label="Score trend across practice runs">
+      <figcaption class="trend__top">
+        <span class="trend__title mono">SCORE TREND</span>
+        <span class="trend__room mono">proof you improved</span>
+      </figcaption>
+
+      <div class="trend__rows">
+        {
+          runs.map((r) => (
+            <div class={`trow${r.best ? ' trow--best' : ''}`}>
+              <span class="trow__k mono">{r.k}</span>
+              <span class="trow__bar">
+                <span style={`width:${r.score}%`} />
+              </span>
+              <span class="trow__n display">
+                {r.score}
+                <span class="trow__max">/100</span>
+              </span>
+              <span class="trow__tag">{r.tag}</span>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="trend__assert mono">eval starts as fixtures → becomes your own history</p>
+    </figure>
+  </div>
+</section>
+
+<hr class="rule wrap-rule" />
+
+<style>
+  .loop__grid {
+    display: grid;
+    grid-template-columns: 1fr 0.95fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+  .loop__title {
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    color: var(--navy);
+    margin-bottom: 1.2rem;
+  }
+  .loop__sub { font-size: 1.1rem; color: var(--muted); max-width: 44ch; }
+  .loop__note {
+    margin-top: 1.5rem;
+    font-size: 0.82rem;
+    color: var(--navy-soft);
+    letter-spacing: 0.04em;
+  }
+  .loop__note-hot { color: var(--orange); }
+
+  .trend {
+    margin: 0;
+    background: var(--navy);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 0 0 1.5rem;
+    box-shadow: 12px 14px 0 rgba(255, 93, 48, 0.16);
+    overflow: hidden;
+  }
+  .trend__top {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 1.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .trend__title { font-size: 0.72rem; letter-spacing: 0.22em; }
+  .trend__room { font-size: 0.72rem; opacity: 0.7; }
+
+  .trend__rows { padding: 1.5rem 1.4rem 0.5rem; display: grid; gap: 1.3rem; }
+  .trow {
+    display: grid;
+    grid-template-columns: 4.4rem 1fr auto;
+    align-items: center;
+    column-gap: 0.9rem;
+    row-gap: 0.25rem;
+  }
+  .trow__k { font-size: 0.74rem; opacity: 0.7; letter-spacing: 0.08em; }
+  .trow__bar {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .trow__bar span {
+    display: block;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 4px;
+  }
+  .trow--best .trow__bar span { background: var(--orange); }
+  .trow__n { font-size: 1.9rem; line-height: 1; color: var(--paper); white-space: nowrap; }
+  .trow--best .trow__n { color: var(--orange); }
+  .trow__max { font-size: 0.78rem; opacity: 0.5; }
+  .trow__tag {
+    grid-column: 2 / -1;
+    font-size: 0.78rem;
+    opacity: 0.6;
+  }
+
+  .trend__assert {
+    margin: 1.2rem 1.4rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 0.78rem;
+    color: #8ff0bf;
+    letter-spacing: 0.03em;
+  }
+
+  .wrap-rule {
+    max-width: var(--maxw);
+    margin-inline: auto;
+    width: calc(100% - 2 * var(--gut));
+  }
+
+  @media (max-width: 900px) {
+    .loop__grid { grid-template-columns: 1fr; }
+    .trend { max-width: 480px; }
+  }
+</style>
