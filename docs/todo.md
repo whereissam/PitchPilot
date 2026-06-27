@@ -165,12 +165,19 @@ barge-in events, history). Keep the brutal copy **sharp, funny, not cruel**.
       PATIENCE: 100`, deltas on the fly (`-20 Judge Patience: stack before pain` / `+15 Clarity`),
       `VERDICT: survived Q&A`. Reinforces "pitch is a realtime performance, not an essay." (Likely
       supersedes #5 — pick one HP/meter treatment, don't ship both.)
-- [ ] **7. Score reveal animation** — after "score me", reveal line-by-line over 1–2s
-      (`Problem clarity: detected / Why voice: weak / … TOTAL: 74/100`) instead of instant. Game-show
-      rhythm. Pure frontend over the scorecard we already get.
-- [ ] **8. "Try Again" rewrite challenge** — post-scorecard button `TRY AGAIN WITH THIS OPENING`
-      shows a stronger opening to read; second run's score trends up. Completes the practice-loop
-      story (bad pitch → 65 → rewrite → 82 → history trend). Leans on the existing history feature.
+- [x] **7. Score reveal animation** — BUILT. `web/src/components/ScoreReveal.tsx`: a ~2.2s
+      game-show pre-roll (JUDGING… → each metric STRONG/DETECTED/WEAK, staggered rise → TOTAL
+      slam) before the full Scoreboard takes over. Live-only (history shows the Scoreboard
+      directly). Also surfaced the previously-missing **TOTAL /100** permanently in the Scoreboard
+      header (shows live + in history). Pure frontend over the scorecard. tsc + build + tests clean.
+- [x] **8. "Try Again" rewrite challenge** — BUILT (needs live test). Post-verdict
+      `TRY AGAIN WITH THIS OPENING →` button uses the Killcam `weakest_line.rewrite` as the stronger
+      opening; clicking disconnects and returns to the start screen with a `READ THIS OPENING`
+      teleprompter card (dismissable). Second run's score then trends up in `/history`. State lifted
+      to `JudgeApp` (survives the room remount via `onTryAgain`). tsc + build + tests clean.
+- [x] **Objection SFX** (from #3) — BUILT. `web/src/lib/sfx.ts`: a synthesized two-knock gavel
+      (Web Audio, no asset). Primed on the START click (gesture unlock); plays on each barge-in
+      flash. Best-effort — no-op if audio is blocked.
 - [ ] **9. Hall of Shame / Hall of Fame** — split the `/history` page: lowest-score pitch + its worst
       line vs. highest-score pitch + its best opening. Makes history more than a list. Uses saved
       scorecards we already store.

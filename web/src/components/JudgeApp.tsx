@@ -12,8 +12,10 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Scoreboard, type Card } from "./Scoreboard";
+import { ScoreReveal } from "./ScoreReveal";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { Killcam } from "./Killcam";
+import { primeAudio, playGavel } from "../lib/sfx";
 import type { TranscriptLine, Feedback } from "../lib/pitches";
 
 type Conn = { token: string; url: string };
@@ -120,11 +122,22 @@ function ObjectionOverlay({ objection }: { objection: Objection | null }) {
   );
 }
 
-function Stage({ personaName, brutal }: { personaName: string; brutal: boolean }) {
+function Stage({
+  personaName,
+  brutal,
+  onTryAgain,
+}: {
+  personaName: string;
+  brutal: boolean;
+  onTryAgain: (opening: string) => void;
+}) {
   const room = useRoomContext();
   const [card, setCard] = useState<FullCard | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [saved, setSaved] = useState<SaveState>("idle");
+  // The game-show reveal plays for a beat before the full Scoreboard takes over.
+  const [revealing, setRevealing] = useState(false);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Demo-health signal: the agent's STT produced at least one transcript line,
   // i.e. it actually heard the founder. Drives the HEARD pill.
   const [heard, setHeard] = useState(false);
@@ -196,6 +209,7 @@ function Stage({ personaName, brutal }: { personaName: string; brutal: boolean }
       objKey.current += 1;
       setObjection({ text, n, key: objKey.current });
       setRedFlags(n);
+      playGavel(); // best-effort SFX; no-op if audio wasn't primed
       if (objTimer.current) clearTimeout(objTimer.current);
       objTimer.current = setTimeout(() => setObjection(null), 1800);
     } catch {
@@ -203,12 +217,21 @@ function Stage({ personaName, brutal }: { personaName: string; brutal: boolean }
     }
   });
 
-  useEffect(() => () => void (objTimer.current && clearTimeout(objTimer.current)), []);
+  useEffect(
+    () => () => {
+      if (objTimer.current) clearTimeout(objTimer.current);
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    },
+    [],
+  );
 
   useDataChannel("scorecard", (msg) => {
     try {
       const full = JSON.parse(new TextDecoder().decode(msg.payload)) as FullCard;
       setCard(full); // render the verdict immediately — never wait on feedback
+      setRevealing(true); // play the reveal, then swap to the full Scoreboard
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+      revealTimer.current = setTimeout(() => setRevealing(false), 2200);
       void handleVerdict(full);
     } catch {
       /* malformed payload — voice still delivers the verdict */
@@ -309,11 +332,32 @@ function Stage({ personaName, brutal }: { personaName: string; brutal: boolean }
 
       <main className="flex flex-1 flex-col">
         {card ? (
-          <>
-            <Scoreboard card={card} />
-            {feedback && <Killcam weakestLine={feedback.weakest_line} />}
-            {feedback && <FeedbackPanel feedback={feedback} />}
-          </>
+          revealing ? (
+            <ScoreReveal card={card} />
+          ) : (
+            <>
+              <Scoreboard card={card} />
+              {feedback && <Killcam weakestLine={feedback.weakest_line} />}
+              {feedback && <FeedbackPanel feedback={feedback} />}
+              {feedback && (
+                <div className="border-t-2 border-ink px-6 py-6 md:px-10">
+                  <button
+                    onClick={() => {
+                      onTryAgain(feedback.weakest_line.rewrite);
+                      room.disconnect();
+                    }}
+                    className="group inline-flex items-center gap-3 bg-ink px-6 py-4 font-display text-2xl tracking-wide text-bone transition-colors hover:bg-acid hover:text-ink md:text-3xl"
+                  >
+                    TRY AGAIN WITH THIS OPENING
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </button>
+                  <p className="mt-2 font-body text-sm text-ink/55">
+                    Pitch again — lead with the rewrite and watch the score climb.
+                  </p>
+                </div>
+              )}
+            </>
+          )
         ) : (
           <LiveStage />
         )}
@@ -535,6 +579,8 @@ export default function JudgeApp() {
   const [err, setErr] = useState<string | null>(null);
   const [persona, setPersona] = useState<string>(PERSONAS[0].key);
   const [brutal, setBrutal] = useState(false);
+  // A suggested opening to read on the next run — set by "Try Again with this opening".
+  const [opening, setOpening] = useState<string | null>(null);
   const personaName = PERSONAS.find((p) => p.key === persona)?.name ?? PERSONAS[0].name;
 
   if (!conn) {
@@ -569,11 +615,30 @@ export default function JudgeApp() {
         </div>
 
         <div className="space-y-6">
+          {opening && (
+            <div className="border-2 border-acid bg-acid/10 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-body text-xs font-bold tracking-[0.28em] text-acid">
+                  READ THIS OPENING
+                </p>
+                <button
+                  onClick={() => setOpening(null)}
+                  className="font-body text-xs font-bold tracking-[0.14em] text-ink/45 hover:text-ink"
+                >
+                  DISMISS
+                </button>
+              </div>
+              <p className="mt-2 font-display text-[clamp(1.3rem,3vw,2rem)] leading-tight">
+                “{opening}”
+              </p>
+            </div>
+          )}
           <PersonaPicker selected={persona} onSelect={setPersona} />
           <IntensityToggle brutal={brutal} onChange={setBrutal} />
           <button
             onClick={async () => {
               setErr(null);
+              primeAudio(); // unlock audio inside the click so barge-in SFX can play later
               try {
                 const res = await fetch(
                   `/api/token?persona=${encodeURIComponent(persona)}${brutal ? "&brutal=1" : ""}`,
@@ -615,7 +680,7 @@ export default function JudgeApp() {
       onDisconnected={() => setConn(null)}
     >
       <RoomAudioRenderer />
-      <Stage personaName={personaName} brutal={brutal} />
+      <Stage personaName={personaName} brutal={brutal} onTryAgain={setOpening} />
     </LiveKitRoom>
   );
 }

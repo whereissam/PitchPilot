@@ -7,6 +7,7 @@ export type Card = {
   why_voice: number;
   benchmark_present: boolean;
   best_next_fix: string;
+  total: number;
 };
 
 const METRICS: [string, keyof Card][] = [
@@ -20,9 +21,13 @@ const METRICS: [string, keyof Card][] = [
 export function Scoreboard({ card }: { card: Card }) {
   return (
     <div className="slam bg-ink text-bone">
-      <div className="border-b-2 border-bone/25 px-6 py-4 md:px-10">
+      <div className="flex items-end justify-between gap-4 border-b-2 border-bone/25 px-6 py-4 md:px-10">
         <p className="font-display text-[clamp(2.4rem,8vw,5.5rem)] leading-[0.9] tracking-tight">
           THE VERDICT
+        </p>
+        <p className="font-display text-[clamp(2.4rem,8vw,5.5rem)] leading-[0.9] tracking-tight text-acid">
+          {card.total}
+          <span className="align-top font-body text-base text-bone/40"> /100</span>
         </p>
       </div>
 
