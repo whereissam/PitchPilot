@@ -11,7 +11,7 @@ function Home() {
   if (!mounted) {
     return (
       <main style={{ padding: 48, fontFamily: "system-ui" }}>
-        <h1>JudgeMode</h1>
+        <h1>PitchPilot</h1>
         <p>Loading…</p>
       </main>
     );

@@ -24,7 +24,7 @@ async def entrypoint(ctx: agents.JobContext):
     )
     await session.start(room=ctx.room, agent=JudgeAgent())
     await session.generate_reply(
-        instructions="In ONE short sentence, say you are JudgeMode and tell them to start their pitch."
+        instructions="In ONE short sentence, say you are PitchPilot and tell them to start their pitch."
     )
 
 
